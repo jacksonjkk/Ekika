@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #883600;
+  --color-primary-container: #a94c16;
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-on-surface: #1f1b13;
+  --color-surface-variant: #f5f5f5;
+  --color-on-surface-variant: #54433c;
+  --color-secondary: #47673a;
+  --color-secondary-container: #e8f5e9;
+  --color-on-secondary-container: #2e7d32;
+  --color-tertiary: #7e3e00;
+  --color-tertiary-container: #a25200;
+  --color-surface-container-low: #fafafa;
+  --color-surface-container-high: #f5f5f5;
+  --color-surface-container-highest: #eeeeee;
+  --color-on-background: #1f1b13;
+  
+  --font-headline: "Epilogue", sans-serif;
+  --font-body: "Manrope", sans-serif;
+}
+
+@layer base {
+  html, body {
+    @apply bg-surface font-body text-on-surface selection:bg-primary/20 overflow-x-hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+.kiga-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30L0 30z' fill='%23883600' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+}
+
+.backdrop-blur-xl {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
