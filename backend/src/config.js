@@ -26,7 +26,7 @@ const databaseValue = process.env.DATABASE_PATH ?? "./data/ekika.db";
 export const config = Object.freeze({
   backendRoot,
   nodeEnv: process.env.NODE_ENV ?? "development",
-  host: process.env.HOST ?? "127.0.0.1",
+  host: process.env.HOST ?? "0.0.0.0",
   port: integer("PORT", 4000),
   databasePath: path.isAbsolute(databaseValue) ? databaseValue : path.resolve(backendRoot, databaseValue),
   frontendOrigins: (process.env.FRONTEND_ORIGIN ?? "http://localhost:5173")
