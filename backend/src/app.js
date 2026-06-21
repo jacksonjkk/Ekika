@@ -319,7 +319,7 @@ async function requestPortalOtp({ supabase, body, authProvider }) {
   };
 }
 
-async function verifyPortalOtp({ supabase, body, authProvider, appConfig }) {
+async function verifyPortalOtp({ supabase, body, authProvider, appConfig, request }) {
   if (!authProvider?.configured) throw httpError(503, "Email verification is not configured yet.");
   const email = emailValue(body?.email);
   const bookingReference = text(body?.bookingReference, "Booking reference", 100);
@@ -359,7 +359,7 @@ async function verifyPortalOtp({ supabase, body, authProvider, appConfig }) {
   return {
     data: { booking: serializeBooking(booking), expiresAt: expiresAt.toISOString() },
     headers: {
-      "Set-Cookie": portalSessionCookie(sessionToken, appConfig.portalSessionTtlSeconds, appConfig.nodeEnv === "production"),
+      "Set-Cookie": portalSessionCookie(sessionToken, appConfig.portalSessionTtlSeconds, usesSecureCookies(request, appConfig)),
     },
   };
 }
@@ -379,7 +379,7 @@ async function getCustomerPortal({ supabase, request }) {
   return { data: { booking: serializeBooking(session), payments: (payments ?? []).map(serializePayment) } };
 }
 
-async function registerCustomer({ supabase, body, appConfig }) {
+async function registerCustomer({ supabase, body, appConfig, request }) {
   const name = text(body?.name, "Name", 120);
   const email = emailValue(body?.email);
   const password = text(body?.password, "Password", 200);
@@ -430,12 +430,12 @@ async function registerCustomer({ supabase, body, appConfig }) {
     status: 201,
     data: { customer: { id, name, email, phone } },
     headers: {
-      "Set-Cookie": customerSessionCookie(sessionToken, appConfig.portalSessionTtlSeconds, appConfig.nodeEnv === "production"),
+      "Set-Cookie": customerSessionCookie(sessionToken, appConfig.portalSessionTtlSeconds, usesSecureCookies(request, appConfig)),
     },
   };
 }
 
-async function loginCustomer({ supabase, body, appConfig }) {
+async function loginCustomer({ supabase, body, appConfig, request }) {
   const email = emailValue(body?.email);
   const password = text(body?.password, "Password", 200);
 
@@ -467,7 +467,7 @@ async function loginCustomer({ supabase, body, appConfig }) {
   return {
     data: { customer: { id: customer.id, name: customer.name, email: customer.email, phone: customer.phone } },
     headers: {
-      "Set-Cookie": customerSessionCookie(sessionToken, appConfig.portalSessionTtlSeconds, appConfig.nodeEnv === "production"),
+      "Set-Cookie": customerSessionCookie(sessionToken, appConfig.portalSessionTtlSeconds, usesSecureCookies(request, appConfig)),
     },
   };
 }
@@ -494,8 +494,8 @@ async function logoutCustomer({ supabase, request, appConfig }) {
     empty: true,
     headers: {
       "Set-Cookie": [
-        portalSessionCookie("", 0, appConfig.nodeEnv === "production"),
-        customerSessionCookie("", 0, appConfig.nodeEnv === "production"),
+        portalSessionCookie("", 0, usesSecureCookies(request, appConfig)),
+        customerSessionCookie("", 0, usesSecureCookies(request, appConfig)),
       ],
     },
   };
@@ -1148,6 +1148,12 @@ function readCookie(request, name) {
     if (key === name) return decodeURIComponent(parts.join("="));
   }
   return "";
+}
+
+function usesSecureCookies(request, appConfig) {
+  const forwardedProtocol = String(request.headers["x-forwarded-proto"] ?? "").split(",")[0].trim();
+  const origin = String(request.headers.origin ?? "");
+  return appConfig.nodeEnv === "production" || forwardedProtocol === "https" || origin.startsWith("https://");
 }
 
 function portalSessionCookie(token, maxAge, secure) {
