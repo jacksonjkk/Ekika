@@ -21,7 +21,7 @@ cp backend/.env.example backend/.env
 npm run dev:backend
 ```
 
-Change `ADMIN_PASSWORD`, `JWT_SECRET`, and `PAYMENT_WEBHOOK_SECRET` before any deployment. Unsafe defaults cause startup failure when `NODE_ENV=production`.
+Change `JWT_SECRET` and `PAYMENT_WEBHOOK_SECRET` before deployment. `ADMIN_PASSWORD` must contain at least 12 characters when using the seed command to create a new admin account.
 
 Default development admin email: `admin@ekikaexperience.ug`.
 

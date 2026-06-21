@@ -15,14 +15,13 @@ The Vite server proxies `/api` to `http://127.0.0.1:4000`. For a separately host
 
 ## Production deployment
 
-The Vercel project hosts the frontend only. Deploy `backend/` to a Node.js host first, then configure these production environment variables:
+The Vercel project hosts the frontend and proxies `/api/*` to the Render backend through `vercel.json`. This keeps customer cookies first-party. Configure these production environment variables:
 
-- Vercel frontend: `VITE_API_URL=https://your-backend.example.com`
 - Backend host: `FRONTEND_ORIGIN=https://your-vercel-site.vercel.app`
 - Backend host: `NODE_ENV=production`
 - Backend host: `HOST=0.0.0.0`
 
-Both URLs must use HTTPS. Redeploy the frontend after changing `VITE_API_URL`, because Vite embeds it at build time.
+Keep `VITE_API_URL` empty in Vercel. Production requests use the same-origin `/api` proxy and Vite embeds no cross-origin API URL.
 
 ## Commands
 

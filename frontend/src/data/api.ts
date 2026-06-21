@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 const configuredApiBase = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 const isLocalDevelopmentApi = /^http:\/\/(?:127\.0\.0\.1|localhost):4000$/.test(configuredApiBase);
-const API_BASE = import.meta.env.DEV && isLocalDevelopmentApi ? "" : configuredApiBase;
+const API_BASE = import.meta.env.PROD ? "" : isLocalDevelopmentApi ? "" : configuredApiBase;
 const ADMIN_TOKEN_KEY = "ekika-admin-token";
 
 type ApiOptions = RequestInit & {

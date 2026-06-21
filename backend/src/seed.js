@@ -58,6 +58,9 @@ async function seed() {
   const adminEmail = config.adminEmail.toLowerCase();
   const { data: existingAdmin } = await supabase.from("admins").select("id").eq("email", adminEmail).single();
   if (!existingAdmin) {
+    if (config.adminPassword.length < 12 || config.adminPassword === "ekika-admin") {
+      throw new Error("ADMIN_PASSWORD must contain at least 12 characters before creating an admin account");
+    }
     await supabase.from("admins").insert({
       id: randomUUID(),
       email: adminEmail,

@@ -50,7 +50,6 @@ export function validateProductionConfig(activeConfig = config) {
   if (activeConfig.nodeEnv !== "production") return;
   const failures = [];
   if (activeConfig.jwtSecret.length < 32 || activeConfig.jwtSecret.includes("development")) failures.push("JWT_SECRET");
-  if (activeConfig.adminPassword.length < 12 || activeConfig.adminPassword === "ekika-admin") failures.push("ADMIN_PASSWORD");
   if (activeConfig.paymentWebhookSecret.length < 24 || activeConfig.paymentWebhookSecret.includes("development")) failures.push("PAYMENT_WEBHOOK_SECRET");
   if (!activeConfig.supabaseUrl || !activeConfig.supabaseServiceKey) failures.push("SUPABASE_URL/SUPABASE_SERVICE_KEY");
   if (failures.length) throw new Error(`Unsafe production configuration: ${failures.join(", ")}`);
