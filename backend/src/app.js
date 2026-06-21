@@ -1143,7 +1143,7 @@ function portalSessionCookie(token, maxAge, secure) {
     `ekika_portal_session=${encodeURIComponent(token)}`,
     "HttpOnly",
     "Path=/api/customer",
-    "SameSite=Lax",
+    secure ? "SameSite=None" : "SameSite=Lax",
     `Max-Age=${maxAge}`,
     secure ? "Secure" : "",
   ].filter(Boolean).join("; ");
@@ -1154,7 +1154,7 @@ function customerSessionCookie(token, maxAge, secure) {
     `ekika_customer_session=${encodeURIComponent(token)}`,
     "HttpOnly",
     "Path=/",
-    "SameSite=Lax",
+    secure ? "SameSite=None" : "SameSite=Lax",
     `Max-Age=${maxAge}`,
     secure ? "Secure" : "",
   ].filter(Boolean).join("; ");

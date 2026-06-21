@@ -13,6 +13,17 @@ Requirements: Node.js 22.5 or newer.
 
 The Vite server proxies `/api` to `http://127.0.0.1:4000`. For a separately hosted API, set `VITE_API_URL` in a root `.env.local` file.
 
+## Production deployment
+
+The Vercel project hosts the frontend only. Deploy `backend/` to a Node.js host first, then configure these production environment variables:
+
+- Vercel frontend: `VITE_API_URL=https://your-backend.example.com`
+- Backend host: `FRONTEND_ORIGIN=https://your-vercel-site.vercel.app`
+- Backend host: `NODE_ENV=production`
+- Backend host: `HOST=0.0.0.0`
+
+Both URLs must use HTTPS. Redeploy the frontend after changing `VITE_API_URL`, because Vite embeds it at build time.
+
 ## Commands
 
 - `npm run dev` - run the React app

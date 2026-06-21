@@ -120,6 +120,7 @@ JPEG, PNG, and WebP files up to 15 MB are accepted, including high-resolution or
 - Persist the `backend/data` and `backend/uploads` directories.
 - Put the API behind HTTPS and a reverse proxy.
 - Set the exact frontend URL in `FRONTEND_ORIGIN`; comma-separate multiple allowed origins.
+- When frontend and API use different HTTPS domains, production cookies use `SameSite=None; Secure` automatically.
 - Back up the SQLite database and uploads together.
 - Use a process manager or container restart policy.
 - For multiple API instances or very high booking volume, replace SQLite and the in-memory rate limiter with PostgreSQL and a shared rate-limit store.

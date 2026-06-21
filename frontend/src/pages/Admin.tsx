@@ -37,11 +37,32 @@ export default function Admin() {
 
   useEffect(() => {
     if (!selectedBookingId || !window.matchMedia("(max-width: 1023px)").matches) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     window.requestAnimationFrame(() => {
-      bookingDetailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      bookingDetailsRef.current?.focus({ preventScroll: true });
+      bookingDetailsRef.current?.focus();
     });
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setSelectedBookingId(null);
+      setBookingDraft(null);
+      setBookingEditError("");
+    }
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
   }, [selectedBookingId]);
+
+  function closeBookingDetails() {
+    setSelectedBookingId(null);
+    setBookingDraft(null);
+    setBookingEditError("");
+  }
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -300,11 +321,32 @@ export default function Admin() {
               </div>
 
               {selectedBooking && (
-                <article className="lg:col-span-7 scroll-mt-28 bg-surface-container-low rounded-2xl p-5 sm:p-7 border border-outline-variant/10 shadow-lg outline-none" ref={bookingDetailsRef} tabIndex={-1}>
+                <div
+                  className="lg:col-span-7 max-lg:fixed max-lg:inset-0 max-lg:z-[70] max-lg:bg-black/55 max-lg:backdrop-blur-sm max-lg:p-4 max-lg:overflow-y-auto"
+                  onClick={(event) => {
+                    if (event.target === event.currentTarget) closeBookingDetails();
+                  }}
+                >
+                <article
+                  aria-labelledby="booking-details-title"
+                  aria-modal={window.matchMedia("(max-width: 1023px)").matches || undefined}
+                  className="relative bg-surface-container-low rounded-2xl p-5 sm:p-7 border border-outline-variant/10 shadow-2xl outline-none max-lg:mx-auto max-lg:my-4 max-lg:max-w-2xl lg:shadow-lg"
+                  ref={bookingDetailsRef}
+                  role="dialog"
+                  tabIndex={-1}
+                >
+                  <button
+                    aria-label="Close booking details"
+                    className="lg:hidden absolute right-4 top-4 z-10 w-10 h-10 rounded-full bg-surface flex items-center justify-center text-on-surface shadow-md"
+                    onClick={closeBookingDetails}
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-5 border-b border-outline-variant/10">
                     <div>
                       <p className="text-xs uppercase tracking-widest font-bold text-primary mb-2">Booking Details</p>
-                      <h3 className="font-headline text-2xl sm:text-3xl font-black">{selectedBooking.experienceTitle}</h3>
+                      <h3 className="font-headline text-2xl sm:text-3xl font-black pr-10 lg:pr-0" id="booking-details-title">{selectedBooking.experienceTitle}</h3>
                       <p className="text-xs text-on-surface-variant mt-2 break-all">Reference: {selectedBooking.id}</p>
                     </div>
                     {!bookingDraft && <button className="bg-primary text-on-primary px-5 py-3 rounded-xl font-bold text-sm" onClick={() => beginBookingEdit(selectedBooking)} type="button">Edit Details</button>}
@@ -352,6 +394,7 @@ export default function Admin() {
                     </div>
                   )}
                 </article>
+                </div>
               )}
               {!selectedBooking && (
                 <div className="lg:col-span-7 min-h-72 bg-surface-container-low rounded-2xl p-8 border border-outline-variant/10 flex flex-col items-center justify-center text-center">
