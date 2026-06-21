@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
+    "build": "echo 'No build required'",
     "test": "node --test",
     "seed": "node src/seed.js"
   },
