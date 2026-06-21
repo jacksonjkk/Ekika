@@ -24,7 +24,9 @@ export async function apiRequest<T>(path: string, options: ApiOptions = {}): Pro
   const payload = response.status === 204 ? null : await response.json();
   if (!response.ok) {
     if (options.admin && response.status === 401) clearAdminToken();
-    throw new Error(payload?.error ?? `API request failed (${response.status})`);
+    const message = payload?.error ?? `API request failed (${response.status})`;
+    const reference = response.status >= 500 && payload?.requestId ? ` Reference: ${payload.requestId}` : "";
+    throw new Error(`${message}${reference}`);
   }
   return payload as T;
 }
@@ -137,6 +139,25 @@ export async function fetchCustomerProfile() {
   }
 }
 
+let customerSessionRequest: Promise<CustomerRecord | null> | null = null;
+
+export function fetchCustomerSession() {
+  if (customerSessionRequest) return customerSessionRequest;
+
+  customerSessionRequest = apiRequest<{ customer: CustomerRecord | null }>("/api/customer/session")
+    .then(({ customer }) => {
+      if (customer) window.sessionStorage.setItem("ekika-customer", JSON.stringify(customer));
+      else window.sessionStorage.removeItem("ekika-customer");
+      window.dispatchEvent(new Event("ekika-customer-auth-updated"));
+      return customer;
+    })
+    .finally(() => {
+      customerSessionRequest = null;
+    });
+
+  return customerSessionRequest;
+}
+
 export function hasCustomerSession() {
   return Boolean(getCachedCustomer());
 }
@@ -151,8 +172,8 @@ export function useCustomer() {
 
     window.addEventListener("ekika-customer-auth-updated", refresh);
     
-    // Fetch profile to verify session cookie still exists/is valid
-    fetchCustomerProfile().catch(() => {
+    // Restore or clear the cached customer without producing an expected 401 while logged out.
+    fetchCustomerSession().catch(() => {
       // If error, session cookie is invalid, user will be logged out dynamically
     });
 

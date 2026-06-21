@@ -1,13 +1,10 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { loginCustomer } from "../data/api";
 
 export default function CustomerAccess() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const redirectPath = searchParams.get("redirect") ?? "/customer-portal";
-  const isBookingFlow = redirectPath.startsWith("/booking?experience=");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -20,7 +17,7 @@ export default function CustomerAccess() {
 
     try {
       await loginCustomer(email, password);
-      navigate(redirectPath);
+      navigate("/customer-portal", { replace: true });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Invalid email or password");
     } finally {
@@ -38,9 +35,7 @@ export default function CustomerAccess() {
           Sign in to your account
         </h1>
         <p className="text-on-surface-variant leading-relaxed mb-8">
-          {isBookingFlow
-            ? "Sign in to continue booking your selected experience."
-            : "Open your dashboard to view and manage your experiences."}
+          Open your dashboard to view and manage your experiences.
         </p>
 
         {error && (
@@ -86,7 +81,7 @@ export default function CustomerAccess() {
 
         <div className="mt-8 pt-6 border-t border-outline-variant/10 text-center text-sm text-on-surface-variant">
           Don&apos;t have an account?{" "}
-          <Link className="text-primary font-bold hover:underline" to={`/signup?redirect=${encodeURIComponent(redirectPath)}`}>
+          <Link className="text-primary font-bold hover:underline" to="/signup">
             Create one
           </Link>
         </div>

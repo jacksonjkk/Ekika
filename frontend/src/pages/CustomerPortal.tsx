@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCustomer, apiRequest, fetchCustomerProfile } from "../data/api";
+import { useCustomer, apiRequest, fetchCustomerSession } from "../data/api";
 import type { BookingRecord } from "../data/bookings";
 import { useSiteContent } from "../data/content";
 
@@ -18,7 +18,10 @@ export default function CustomerPortal() {
 
     const request = customer
       ? apiRequest<{ bookings: BookingRecord[] }>("/api/customer/bookings")
-      : fetchCustomerProfile().then(() => apiRequest<{ bookings: BookingRecord[] }>("/api/customer/bookings"));
+      : fetchCustomerSession().then((session) => {
+          if (!session) throw new Error("Please sign in to view your bookings.");
+          return apiRequest<{ bookings: BookingRecord[] }>("/api/customer/bookings");
+        });
 
     request
       .then((result) => {

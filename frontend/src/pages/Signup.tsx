@@ -1,12 +1,10 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { registerCustomer } from "../data/api";
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const redirectPath = searchParams.get("redirect") ?? "/customer-portal";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -27,7 +25,7 @@ export default function Signup() {
 
     try {
       await registerCustomer(name, email, password, phone);
-      navigate(redirectPath);
+      navigate("/customer-portal", { replace: true });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Unable to register account");
     } finally {
@@ -115,7 +113,7 @@ export default function Signup() {
 
         <div className="mt-8 pt-6 border-t border-outline-variant/10 text-center text-sm text-on-surface-variant">
           Already have an account?{" "}
-          <Link className="text-primary font-bold hover:underline" to={`/customer-access?redirect=${encodeURIComponent(redirectPath)}`}>
+          <Link className="text-primary font-bold hover:underline" to="/customer-access">
             Sign in here
           </Link>
         </div>

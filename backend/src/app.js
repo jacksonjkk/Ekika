@@ -92,6 +92,7 @@ function matchRoute(method, pathname) {
     route("POST", /^\/api\/customer\/register$/, registerCustomer, [], { body: true, rateLimit: "public-write" }),
     route("POST", /^\/api\/customer\/login$/, loginCustomer, [], { body: true, rateLimit: "login" }),
     route("POST", /^\/api\/customer\/logout$/, logoutCustomer, [], { rateLimit: "portal" }),
+    route("GET", /^\/api\/customer\/session$/, getCustomerSession, [], { rateLimit: "portal" }),
     route("GET", /^\/api\/customer\/profile$/, getCustomerProfile, [], { rateLimit: "portal" }),
     route("GET", /^\/api\/customer\/bookings$/, getCustomerBookings, [], { rateLimit: "portal" }),
     route("POST", /^\/api\/portal-auth\/request-otp$/, requestPortalOtp, [], { body: true, rateLimit: "otp-request" }),
@@ -504,6 +505,17 @@ async function getCustomerProfile({ supabase, request }) {
   const session = await findCustomerSession(supabase, request);
   if (!session) throw httpError(401, "Please log in to view your profile.");
   return { data: { customer: { id: session.id, name: session.name, email: session.email, phone: session.phone } } };
+}
+
+async function getCustomerSession({ supabase, request }) {
+  const session = await findCustomerSession(supabase, request);
+  return {
+    data: {
+      customer: session
+        ? { id: session.id, name: session.name, email: session.email, phone: session.phone }
+        : null,
+    },
+  };
 }
 
 async function getCustomerBookings({ supabase, request }) {

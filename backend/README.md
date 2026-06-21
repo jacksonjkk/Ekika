@@ -60,6 +60,7 @@ Public:
 - `POST /api/portal-auth/verify-otp`
 - `GET /api/customer/portal`
 - `POST /api/customer/logout`
+- `GET /api/customer/session`
 - `GET /api/portal/:token`
 - `POST /api/portal/:token/payments`
 - `POST /api/webhooks/payments/:provider`

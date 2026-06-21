@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { fetchCustomerProfile, getCachedCustomer, useCustomer } from "../data/api";
+import { fetchCustomerSession, getCachedCustomer, useCustomer } from "../data/api";
 
 export default function RequireCustomer() {
   const customer = useCustomer();
@@ -11,7 +11,7 @@ export default function RequireCustomer() {
     if (customer || sessionChecked) return;
 
     let active = true;
-    fetchCustomerProfile()
+    fetchCustomerSession()
       .catch(() => undefined)
       .finally(() => {
         if (active) setSessionChecked(true);
@@ -35,4 +35,3 @@ export default function RequireCustomer() {
   const returnPath = `${location.pathname}${location.search}${location.hash}`;
   return <Navigate to={`/customer-access?redirect=${encodeURIComponent(returnPath)}`} replace />;
 }
-
