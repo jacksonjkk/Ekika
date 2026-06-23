@@ -41,6 +41,76 @@ export async function loginAdmin(email: string, password: string) {
   return result;
 }
 
+export async function updateAdminSettings(currentPassword: string, newEmail?: string, newPassword?: string) {
+  return await apiRequest<{ success: boolean }>("/api/admin/settings", {
+    admin: true,
+    method: "PUT",
+    body: JSON.stringify({ currentPassword, newEmail, newPassword }),
+  });
+}
+
+export type AuditLog = {
+  id: string;
+  adminEmail: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  details: any;
+  createdAt: string;
+};
+
+export async function getAuditLogs() {
+  return await apiRequest<{ logs: AuditLog[] }>("/api/admin/audit-logs", {
+    admin: true,
+  });
+}
+
+export type Review = {
+  id: string;
+  reviewerName: string;
+  reviewerPhoto: string;
+  experienceTitle: string;
+  rating: number;
+  comment: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ReviewDraft = Omit<Review, "id" | "createdAt" | "updatedAt">;
+
+export async function getPublicReviews() {
+  return await apiRequest<{ reviews: Review[] }>("/api/reviews");
+}
+
+export async function getAdminReviews() {
+  return await apiRequest<{ reviews: Review[] }>("/api/admin/reviews", { admin: true });
+}
+
+export async function createReview(draft: ReviewDraft) {
+  return await apiRequest<{ review: Review }>("/api/admin/reviews", {
+    admin: true,
+    method: "POST",
+    body: JSON.stringify(draft),
+  });
+}
+
+export async function updateReview(id: string, draft: ReviewDraft) {
+  return await apiRequest<{ review: Review }>(`/api/admin/reviews/${id}`, {
+    admin: true,
+    method: "PUT",
+    body: JSON.stringify(draft),
+  });
+}
+
+export async function deleteReview(id: string) {
+  return await apiRequest<null>(`/api/admin/reviews/${id}`, {
+    admin: true,
+    method: "DELETE",
+  });
+}
+
 export function getAdminToken() {
   return window.sessionStorage.getItem(ADMIN_TOKEN_KEY);
 }

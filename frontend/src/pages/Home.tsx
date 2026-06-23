@@ -1,6 +1,75 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getPublicReviews } from "../data/api";
+import type { Review } from "../data/api";
 
 export default function Home() {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  const [hasReviewsLoadError, setHasReviewsLoadError] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+
+    getPublicReviews()
+      .then((result) => {
+        if (!mounted) return;
+        setReviews(result.reviews);
+      })
+      .catch((error) => {
+        if (!mounted) return;
+        setHasReviewsLoadError(true);
+        console.error("Failed to load reviews:", error);
+        setReviews([]);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setIsLoadingReviews(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const renderSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="p-8 rounded-3xl flex flex-col h-full transition-all duration-300 bg-surface-container-lowest shadow-sm"
+        >
+          <div className="flex gap-1 mb-6 text-[#eab308]">
+            {Array.from({ length: 5 }).map((_, j) => (
+              <span
+                key={j}
+                className="material-symbols-outlined animate-pulse opacity-60"
+                style={{ fontVariationSettings: `'FILL' 0` }}
+              >
+                star
+              </span>
+            ))}
+          </div>
+
+          <div className="animate-pulse">
+            <div className="h-6 bg-on-surface/10 rounded w-11/12 mb-4" />
+            <div className="h-6 bg-on-surface/10 rounded w-10/12 mb-4" />
+            <div className="h-6 bg-on-surface/10 rounded w-9/12" />
+          </div>
+
+          <div className="mt-auto flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 bg-on-surface/10 animate-pulse" />
+            <div className="flex-1">
+              <div className="h-4 bg-on-surface/10 rounded w-2/3 mb-3 animate-pulse" />
+              <div className="h-3 bg-on-surface/10 rounded w-1/2 animate-pulse" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <>
       {/* Hero Section */}
@@ -15,18 +84,27 @@ export default function Home() {
         </div>
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 md:px-12 w-full pt-20 sm:pt-28">
           <div className="max-w-3xl">
-            <span className="inline-block py-1 px-4 bg-tertiary/10 text-tertiary rounded-full text-xs font-bold uppercase tracking-widest mb-6">Traditional Wisdom & Cultural Roots</span>
+            <span className="inline-block py-1 px-4 bg-tertiary/10 text-tertiary rounded-full text-xs font-bold uppercase tracking-widest mb-6">
+              Traditional Wisdom & Cultural Roots
+            </span>
             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-headline font-extrabold text-on-surface leading-[1.08] mb-6 sm:mb-8">
               Experience the <span className="text-primary italic">Authentic</span> Kiga Culture
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-on-surface-variant font-body mb-8 sm:mb-10 leading-relaxed max-w-2xl">
-              Journey into the heart of the Kigezi Highlands. Discover the rhythm of the hills through ancient songs, traditional craft, and the enduring spirit of the people of the mountains.
+              Journey into the heart of the Kigezi Highlands. Discover the rhythm of the hills through ancient songs,
+              traditional craft, and the enduring spirit of the people of the mountains.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/experiences" className="flex min-h-14 w-full sm:w-auto items-center justify-center bg-gradient-to-r from-primary to-primary-container text-white px-6 sm:px-8 py-4 rounded-lg font-label font-bold text-sm uppercase shadow-xl shadow-primary/20 hover:scale-105 transition-transform text-center">
+              <Link
+                to="/experiences"
+                className="flex min-h-14 w-full sm:w-auto items-center justify-center bg-gradient-to-r from-primary to-primary-container text-white px-6 sm:px-8 py-4 rounded-lg font-label font-bold text-sm uppercase shadow-xl shadow-primary/20 hover:scale-105 transition-transform text-center"
+              >
                 Explore Experiences
               </Link>
-              <Link to="/about" className="flex min-h-14 w-full sm:w-auto items-center justify-center gap-3 bg-surface-container-low/80 backdrop-blur-md text-primary px-6 sm:px-8 py-4 rounded-lg font-label font-bold text-sm uppercase hover:bg-surface-container-high transition-colors text-center">
+              <Link
+                to="/about"
+                className="flex min-h-14 w-full sm:w-auto items-center justify-center gap-3 bg-surface-container-low/80 backdrop-blur-md text-primary px-6 sm:px-8 py-4 rounded-lg font-label font-bold text-sm uppercase hover:bg-surface-container-high transition-colors text-center"
+              >
                 <span className="material-symbols-outlined">play_circle</span>
                 Watch Our Story
               </Link>
@@ -63,19 +141,28 @@ export default function Home() {
               </div>
               <div className="space-y-5 text-on-surface-variant font-body text-base sm:text-lg leading-relaxed">
                 <p>
-                  Nestled in the mist-covered "Switzerland of Africa," the Bakiga people have cultivated a heritage as resilient as the terraced hills they inhabit. For centuries, our culture has been shared through the oral traditions of the Griots—the keepers of history.
+                  Nestled in the mist-covered "Switzerland of Africa," the Bakiga people have cultivated a heritage as
+                  resilient as the terraced hills they inhabit. For centuries, our culture has been shared through the
+                  oral traditions of the Griots—the keepers of history.
                 </p>
                 <p>
-                  The <span className="font-bold underline decoration-primary">Ekika Cultural Experience</span> was born from a desire to preserve this vibrant heritage while empowering the local communities of Kabale. We don't just show you our world; we invite you to live within it—weaving baskets, brewing traditional honey wine, and dancing the energetic <span className="italic font-bold text-primary">Ekizino</span> dance.
+                  The <span className="font-bold underline decoration-primary">Ekika Cultural Experience</span> was born
+                  from a desire to preserve this vibrant heritage while empowering the local communities of Kabale. We
+                  don't just show you our world; we invite you to live within it—weaving baskets, brewing traditional
+                  honey wine, and dancing the energetic <span className="italic font-bold text-primary">Ekizino</span>
+                  dance.
                 </p>
                 <p>
-                  Every visit supports sustainable community development, ensuring that the legacy of the highlands continues to flourish for generations to come.
+                  Every visit supports sustainable community development, ensuring that the legacy of the highlands
+                  continues to flourish for generations to come.
                 </p>
               </div>
               <div className="pt-6">
                 <Link to="/about" className="inline-flex items-center gap-2 text-primary font-bold font-label group">
                   Learn more about our heritage
-                  <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+                  <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">
+                    arrow_forward
+                  </span>
                 </Link>
               </div>
             </div>
@@ -91,84 +178,79 @@ export default function Home() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-headline font-black text-on-surface mb-6">Echoes from the Hills</h2>
             <p className="text-on-surface-variant text-lg">Travelers from across the globe have found home in our highlands. Here are some of their stories.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Testimonial 1 */}
-            <div className="bg-surface-container-lowest p-8 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full">
-              <div className="flex gap-1 text-primary-container mb-6">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <span key={i} className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                ))}
-              </div>
-              <blockquote className="text-on-surface-variant font-body text-lg leading-relaxed mb-8 flex-grow">
-                "The dance ceremony was like nothing I've ever seen. The energy, the drums, the warmth of the village—it truly felt like a transformation rather than just a tour."
-              </blockquote>
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full overflow-hidden bg-surface-container-high">
-                  <img
-                    alt="User portrait"
-                    className="w-full h-full object-cover"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-o54n0qT_eGcn6WAZZUT6kid4_hqixsVsCnwILW7uVkBoeW-HSDYSePfun781BWxJmFiWRff7uXyM2q9us0nlXTVUfzKAj769WZeEXDDhBPDAS6oa5tuzDRl6crVx6bFlNKrWcn408jj9BaLAuk5MzVCGheVML_3Z6H06aI35tZB5p0JoROfDVd04ba4x8NOLCaNrjHeUDt0JugsmadKZWVkxKGxFJnd9Lewtq4HPhW-dQHJir8mmDyN8jvHLkLRdBAI3va14gUg"
-                  />
-                </div>
-                <div>
-                  <p className="font-headline font-bold text-on-surface">Sarah Mitchell</p>
-                  <p className="text-sm text-on-surface-variant/70 uppercase tracking-widest font-label">London, UK</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Testimonial 2 */}
-            <div className="bg-primary text-on-primary p-8 rounded-3xl shadow-xl shadow-primary/20 flex flex-col h-full md:-translate-y-8">
-              <div className="flex gap-1 text-primary-fixed mb-6">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <span key={i} className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                ))}
-              </div>
-              <blockquote className="font-body text-lg leading-relaxed mb-8 flex-grow">
-                "Beyond the beautiful landscapes, it's the people that make this place special. We spent a day learning traditional farming and it was the highlight of our Uganda trip."
-              </blockquote>
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full overflow-hidden bg-white/20">
-                  <img
-                    alt="User portrait"
-                    className="w-full h-full object-cover"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDADczsgIavf_eTu17Kug62piQ2INIn8XxViepin2Yr9ZezJ496ILeenlqSXL5E-3rC0JzuX-H6MGMzqyco-sEhw3SOe5Z729wPrCWtJrbl2oiB7o33jEkE2JFdrEVrY2ZmWKRXhBmZd_vDNUi-5Ch-ZmJDGsUk6ZhyJCIKfAlRdprlPbfpuQ5il6Vra_OAYP6lRbJJFODdwUUoqnFCEiICY6B7A3H7AZFz0MgeVUGXSbn2l9-miaS0ZRB_LLlsBnPJE-Wf3V7I9lI"
-                  />
-                </div>
-                <div>
-                  <p className="font-headline font-bold">David Chen</p>
-                  <p className="text-sm text-on-primary/70 uppercase tracking-widest font-label">Toronto, CA</p>
-                </div>
-              </div>
+          {isLoadingReviews ? (
+            renderSkeleton()
+          ) : hasReviewsLoadError ? (
+            <div className="text-center py-12">
+              <p className="text-on-surface-variant font-body">Unable to load reviews right now.</p>
             </div>
+          ) : reviews.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-on-surface-variant font-body">No reviews yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {reviews.slice(0, 3).map((review, index) => {
+                const isHighlighted = index === 1;
 
-            {/* Testimonial 3 */}
-            <div className="bg-surface-container-lowest p-8 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full">
-              <div className="flex gap-1 text-primary-container mb-6">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <span key={i} className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                ))}
-              </div>
-              <blockquote className="text-on-surface-variant font-body text-lg leading-relaxed mb-8 flex-grow">
-                "As a solo traveler, I felt completely safe and welcomed. The guides are incredibly knowledgeable about their history and very passionate."
-              </blockquote>
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full overflow-hidden bg-surface-container-high">
-                  <img
-                    alt="User portrait"
-                    className="w-full h-full object-cover"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhE9CEdTV-dh1rAekKvpu86WgbS8J-_gchD3RRdOhqfwrOOljzMRrcYWEx1VTgdddOYh4UUZ4fvF6cjKi7qwxiZLmBx8hwzuknAWTAe_mSSRkx40pw9EOzjanth-dtM1XnXk2wqdRjIkQk1e_cz3Q0IHpkr5gsD4IrjSlx9R314CiexqT-84idB0NZ9pmYBfIz1UQZwjb4PQBJ0IQhXnYpfIlU767D7cFz2D1iizHMnMXcxZPC-CGe1sk_KRNOfqdz56qNuSzMRME"
-                  />
-                </div>
-                <div>
-                  <p className="font-headline font-bold text-on-surface">Elena Rodriguez</p>
-                  <p className="text-sm text-on-surface-variant/70 uppercase tracking-widest font-label">Madrid, ES</p>
-                </div>
-              </div>
+                return (
+                  <div
+                    key={review.id}
+                    className={`p-8 rounded-3xl flex flex-col h-full transition-all duration-300 ${
+                      isHighlighted
+                        ? "bg-primary text-on-primary shadow-xl shadow-primary/20 md:-translate-y-8 hover:shadow-2xl hover:shadow-primary/30"
+                        : "bg-surface-container-lowest shadow-sm hover:shadow-xl hover:shadow-primary/5 text-on-surface"
+                    }`}
+                  >
+                    <div className={`flex gap-1 mb-6 ${isHighlighted ? "text-[#fde047]" : "text-[#eab308]"}`}>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <span
+                          key={i}
+                          className="material-symbols-outlined"
+                          style={{ fontVariationSettings: `'FILL' ${i < review.rating ? 1 : 0}` }}
+                        >
+                          star
+                        </span>
+                      ))}
+                    </div>
+
+                    <blockquote className="font-body text-lg leading-relaxed mb-8 flex-grow">"{review.comment}"</blockquote>
+
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${
+                          isHighlighted ? "bg-white/20" : "bg-surface-container-high"
+                        }`}
+                      >
+                        {review.reviewerPhoto ? (
+                          <img alt={review.reviewerName} className="w-full h-full object-cover" src={review.reviewerPhoto} />
+                        ) : (
+                          <span
+                            className={`material-symbols-outlined text-3xl flex items-center justify-center h-full w-full ${
+                              isHighlighted ? "text-on-primary/70" : "text-on-surface-variant/70"
+                            }`}
+                          >
+                            person
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <p className={`font-headline font-bold ${isHighlighted ? "text-on-primary" : "text-on-surface"}`}>{review.reviewerName}</p>
+                        <p className={`text-xs uppercase tracking-widest font-label font-bold ${isHighlighted ? "text-on-primary/70" : "text-on-surface-variant/70"}`}> 
+                          {review.experienceTitle || "Kiga Experience"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
         </div>
       </section>
     </>
   );
 }
+

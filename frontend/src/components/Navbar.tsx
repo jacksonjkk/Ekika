@@ -71,7 +71,7 @@ export default function Navbar() {
             </button>
           </>
         ) : (
-          <Link to="/customer-access" className="navbar-signin-btn font-bold text-xs uppercase px-4 py-2 text-[#78706c] hover:text-[#1f1b13] transition-colors max-sm:hidden">
+          <Link to="/customer-access" className="navbar-signin-btn font-bold text-xs uppercase px-4 py-2 bg-[#883600] text-white rounded-full hover:bg-[#6c2b00] transition-colors max-sm:hidden">
             Sign In
           </Link>
         )}

@@ -7,6 +7,7 @@ export default function CustomerAccess() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -59,15 +60,27 @@ export default function CustomerAccess() {
           </label>
           <label className="block">
             <span className="block text-sm font-bold text-on-surface tracking-wide mb-2 px-1">PASSWORD</span>
-            <input
-              autoComplete="current-password"
-              className="w-full h-14 bg-surface-container-high border-none rounded-xl px-4 text-on-surface focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all"
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••••"
-              type="password"
-              value={password}
-              required
-            />
+            <div className="relative">
+              <input
+                autoComplete="current-password"
+                className="w-full h-14 bg-surface-container-high border-none rounded-xl pl-4 pr-12 text-on-surface focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all"
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                <span className="material-symbols-outlined">
+                  {showPassword ? "visibility_off" : "visibility"}
+                </span>
+              </button>
+            </div>
           </label>
           <button
             className="w-full min-h-14 rounded-xl bg-primary hover:bg-primary-container text-white px-5 py-3 font-bold uppercase tracking-widest text-sm shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:scale-100"

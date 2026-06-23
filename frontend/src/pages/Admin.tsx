@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, FormEvent } from "react";
-import { apiRequest, loginAdmin, useAdminAuth } from "../data/api";
+import { apiRequest, loginAdmin, updateAdminSettings, getAuditLogs, getAdminReviews, createReview, updateReview, deleteReview, useAdminAuth } from "../data/api";
+import type { AuditLog, Review, ReviewDraft } from "../data/api";
 import { updateAdminBookingDetails, updateBooking, useBookings } from "../data/bookings";
 import type { BookingStatus, PaymentStatus } from "../data/bookings";
 import type { SiteContent } from "../data/content";
@@ -19,11 +20,12 @@ export default function Admin() {
   const isAuthed = useAdminAuth();
   const [email, setEmail] = useState(import.meta.env.VITE_ADMIN_EMAIL ?? "admin@ekikaexperience.ug");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [content, setContent] = useState<SiteContent>(getSiteContent);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
   const [saveMessage, setSaveMessage] = useState("");
-  const [activeTab, setActiveTab] = useState<"site" | "experiences" | "bookings" | "gallery">("bookings");
+  const [activeTab, setActiveTab] = useState<"site" | "experiences" | "bookings" | "gallery" | "reviews" | "activity" | "settings">("bookings");
   const [experienceDraft, setExperienceDraft] = useState(createEmptyExperience);
   const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null);
   const [experienceError, setExperienceError] = useState("");
@@ -207,13 +209,25 @@ export default function Admin() {
               value={email}
               required
             />
-            <input
-              className="w-full h-14 bg-surface-container-high border-none rounded-xl px-4 text-on-surface"
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Admin password"
-              type="password"
-              value={password}
-            />
+            <div className="relative">
+              <input
+                className="w-full h-14 bg-surface-container-high border-none rounded-xl pl-4 pr-12 text-on-surface"
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Admin password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+              />
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                <span className="material-symbols-outlined">
+                  {showPassword ? "visibility_off" : "visibility"}
+                </span>
+              </button>
+            </div>
             <button className="w-full bg-primary text-on-primary h-14 rounded-xl font-bold uppercase tracking-widest" type="submit">
               Sign In
             </button>
@@ -244,6 +258,9 @@ export default function Admin() {
             ["experiences", "Experiences"],
             ["site", "Site"],
             ["gallery", "Gallery"],
+            ["reviews", "Reviews"],
+            ["activity", "Activity"],
+            ["settings", "Settings"],
           ].map(([value, label]) => (
             <button
               className={`px-3 sm:px-5 py-3 rounded-xl text-sm sm:text-base font-bold ${activeTab === value ? "bg-primary text-on-primary" : "text-primary"}`}
@@ -479,7 +496,13 @@ export default function Admin() {
 
         {activeTab === "gallery" && <GalleryManager />}
 
-        {activeTab !== "gallery" && <div className="sticky bottom-4 z-10 bg-surface/90 backdrop-blur-xl border border-outline-variant/10 rounded-2xl p-3 sm:p-4 shadow-xl flex justify-end">
+        {activeTab === "reviews" && <ReviewsManager />}
+
+        {activeTab === "activity" && <AuditLogViewer />}
+
+        {activeTab === "settings" && <AdminSettingsManager />}
+
+        {activeTab !== "gallery" && activeTab !== "activity" && activeTab !== "settings" && activeTab !== "reviews" && <div className="sticky bottom-4 z-10 bg-surface/90 backdrop-blur-xl border border-outline-variant/10 rounded-2xl p-3 sm:p-4 shadow-xl flex justify-end">
           <button
             className="w-full sm:w-auto min-w-44 bg-primary text-on-primary px-8 py-4 rounded-xl font-bold uppercase text-sm disabled:opacity-70 flex items-center justify-center gap-2"
             disabled={saveStatus === "saving"}
@@ -824,12 +847,164 @@ function formatFileSize(bytes: number) {
   return bytes >= 1_000_000 ? `${(bytes / 1_000_000).toFixed(1)} MB` : `${Math.ceil(bytes / 1_000)} KB`;
 }
 
-function AdminField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function AdminField({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
   return (
-    <label className="block">
+    <div className="flex flex-col">
       <span className="block text-sm font-bold text-on-surface tracking-wide px-1 mb-2">{label}</span>
-      <input className="w-full h-14 bg-surface border-none rounded-xl px-4 text-on-surface" onChange={(event) => onChange(event.target.value)} value={value} />
-    </label>
+      <input
+        className="h-14 bg-surface-container-high border-none rounded-xl px-4 text-on-surface"
+        onChange={(event) => onChange(event.target.value)}
+        type={type}
+        value={value}
+      />
+    </div>
+  );
+}
+
+function AdminSettingsManager() {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  async function handleUpdate(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!currentPassword) {
+      setErrorMessage("Current password is required to save changes.");
+      setStatus("error");
+      return;
+    }
+    if (!newEmail && !newPassword) {
+      setErrorMessage("Please provide a new email or new password to update.");
+      setStatus("error");
+      return;
+    }
+    setStatus("saving");
+    setErrorMessage("");
+    try {
+      await updateAdminSettings(currentPassword, newEmail || undefined, newPassword || undefined);
+      setStatus("success");
+      setCurrentPassword("");
+      setNewPassword("");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to update settings.");
+      setStatus("error");
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Page header */}
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined text-primary">manage_accounts</span>
+        </div>
+        <div>
+          <h2 className="font-headline text-2xl sm:text-3xl font-black text-on-surface">Account Settings</h2>
+          <p className="text-on-surface-variant text-sm">Update your admin login credentials securely.</p>
+        </div>
+      </div>
+
+      {/* Alerts */}
+      {status === "error" && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl p-4" role="alert">
+          <span className="material-symbols-outlined text-red-500 shrink-0 mt-0.5">error</span>
+          <p className="text-sm font-semibold text-red-700">{errorMessage}</p>
+        </div>
+      )}
+      {status === "success" && (
+        <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-4" role="status">
+          <span className="material-symbols-outlined text-emerald-600 shrink-0 mt-0.5">check_circle</span>
+          <p className="text-sm font-semibold text-emerald-700">Credentials updated successfully! Use your new details next time you log in.</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* New Credentials card */}
+        <div className="bg-surface-container-low rounded-2xl p-5 sm:p-6 border border-outline-variant/10">
+          <h3 className="font-bold text-on-surface mb-1">New Credentials</h3>
+          <p className="text-xs text-on-surface-variant mb-5">Leave a field blank to keep it unchanged.</p>
+          <div className="space-y-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest" htmlFor="new-email">New Email Address</label>
+              <input
+                className="h-12 bg-surface border border-outline-variant/30 focus:border-primary outline-none rounded-xl px-4 text-on-surface text-sm transition-colors"
+                id="new-email"
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="new@email.com"
+                type="email"
+                value={newEmail}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest" htmlFor="new-password">New Password</label>
+              <div className="relative">
+                <input
+                  className="w-full h-12 bg-surface border border-outline-variant/30 focus:border-primary outline-none rounded-xl px-4 pr-12 text-on-surface text-sm transition-colors"
+                  id="new-password"
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Min. 12 characters for production"
+                  type={showNew ? "text" : "password"}
+                  value={newPassword}
+                />
+                <button
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors"
+                  onClick={() => setShowNew((v) => !v)}
+                  type="button"
+                  aria-label="Toggle password visibility"
+                >
+                  <span className="material-symbols-outlined text-xl">{showNew ? "visibility_off" : "visibility"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Confirm identity card */}
+        <div className="bg-surface-container-low rounded-2xl p-5 sm:p-6 border border-outline-variant/10">
+          <h3 className="font-bold text-on-surface mb-1">Confirm Your Identity</h3>
+          <p className="text-xs text-on-surface-variant mb-5">Enter your current password to authorize these changes.</p>
+          <div className="space-y-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest" htmlFor="current-password">Current Password</label>
+              <div className="relative">
+                <input
+                  className="w-full h-12 bg-surface border border-outline-variant/30 focus:border-primary outline-none rounded-xl px-4 pr-12 text-on-surface text-sm transition-colors"
+                  id="current-password"
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Your current password"
+                  type={showCurrent ? "text" : "password"}
+                  value={currentPassword}
+                />
+                <button
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors"
+                  onClick={() => setShowCurrent((v) => !v)}
+                  type="button"
+                  aria-label="Toggle password visibility"
+                >
+                  <span className="material-symbols-outlined text-xl">{showCurrent ? "visibility_off" : "visibility"}</span>
+                </button>
+              </div>
+            </div>
+            <button
+              className="w-full h-12 bg-primary text-on-primary rounded-xl font-bold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
+              disabled={status === "saving"}
+              onClick={handleUpdate}
+              type="button"
+            >
+              {status === "saving" ? (
+                <><span className="material-symbols-outlined animate-spin text-base">progress_activity</span> Saving...</>
+              ) : (
+                <><span className="material-symbols-outlined text-base">lock_reset</span> Save Changes</>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -873,3 +1048,491 @@ function AdminSelect({
     </label>
   );
 }
+
+function AuditLogViewer() {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    getAuditLogs()
+      .then((result) => setLogs(result.logs))
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load activity logs."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const actionColor: Record<string, string> = {
+    create: "bg-emerald-100 text-emerald-700",
+    update: "bg-blue-100 text-blue-700",
+    delete: "bg-red-100 text-red-700",
+  };
+
+  const actionIcon: Record<string, string> = {
+    create: "add_circle",
+    update: "edit",
+    delete: "delete",
+  };
+
+  const entityIcon: Record<string, string> = {
+    booking: "event",
+    experience: "explore",
+    admin_settings: "manage_accounts",
+    site_settings: "settings",
+    gallery: "photo_library",
+    inquiry: "mail",
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Page header */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-primary">history</span>
+          </div>
+          <div>
+            <h2 className="font-headline text-2xl sm:text-3xl font-black text-on-surface">Activity Log</h2>
+            <p className="text-on-surface-variant text-sm">Chronological history of all admin actions on this platform.</p>
+          </div>
+        </div>
+        {!loading && !error && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-high rounded-full text-xs font-bold text-on-surface-variant">
+            <span className="material-symbols-outlined text-sm">database</span>
+            {logs.length} record{logs.length !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl p-4" role="alert">
+          <span className="material-symbols-outlined text-red-500 shrink-0 mt-0.5">error</span>
+          <p className="text-sm font-semibold text-red-700">{error}</p>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="bg-surface-container-low border border-outline-variant/10 rounded-2xl p-4 flex gap-4 animate-pulse">
+              <div className="w-10 h-10 rounded-xl bg-surface-container-high shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-surface-container-high rounded w-1/3" />
+                <div className="h-3 bg-surface-container-high rounded w-2/3" />
+              </div>
+              <div className="h-3 bg-surface-container-high rounded w-24 shrink-0 mt-1" />
+            </div>
+          ))}
+        </div>
+      ) : logs.length === 0 ? (
+        <div className="py-20 flex flex-col items-center justify-center text-center gap-3 bg-surface-container-low rounded-2xl border border-outline-variant/10">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <span className="material-symbols-outlined text-primary text-3xl">history_toggle_off</span>
+          </div>
+          <p className="font-bold text-on-surface">No activity recorded yet</p>
+          <p className="text-sm text-on-surface-variant max-w-xs">Actions like creating experiences, updating bookings, and changing settings will appear here.</p>
+        </div>
+      ) : (
+        <div className="relative">
+          {/* Timeline line */}
+          <div className="absolute left-5 top-5 bottom-5 w-px bg-outline-variant/20 hidden sm:block" />
+          <div className="space-y-3">
+            {logs.map((log) => {
+              const action = log.action?.toLowerCase() ?? "update";
+              const entity = log.entityType?.toLowerCase() ?? "";
+              return (
+                <article
+                  key={log.id}
+                  className="relative bg-surface-container-low border border-outline-variant/10 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-start gap-3 hover:border-primary/20 transition-colors"
+                >
+                  {/* Icon dot */}
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${actionColor[action] ?? "bg-surface-container-high text-on-surface-variant"}`}>
+                    <span className="material-symbols-outlined text-lg">{actionIcon[action] ?? "bolt"}</span>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${actionColor[action] ?? "bg-surface-container-high text-on-surface-variant"}`}>
+                        {log.action}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        <span className="material-symbols-outlined" style={{fontSize: "10px"}}>{entityIcon[entity] ?? "category"}</span>
+                        {log.entityType?.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <p className="text-sm text-on-surface">
+                      <span className="font-bold">{log.adminEmail}</span>
+                    </p>
+                    {log.entityId && (
+                      <p className="text-xs text-on-surface-variant mt-1 font-mono truncate">
+                        ID: {log.entityId}
+                      </p>
+                    )}
+                  </div>
+
+                  <time className="text-xs text-on-surface-variant shrink-0 sm:text-right whitespace-nowrap">
+                    {new Date(log.createdAt).toLocaleString(undefined, {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </time>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StarRatingSelector({ value, onChange }: { value: number; onChange: (rating: number) => void }) {
+  return (
+    <div className="flex flex-col">
+      <span className="block text-sm font-bold text-on-surface tracking-wide px-1 mb-2">Rating</span>
+      <div className="flex items-center gap-1.5 h-14 bg-surface-container-high rounded-xl px-4">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star)}
+            className="text-2xl transition-transform active:scale-95 focus:outline-none flex items-center"
+          >
+            <span
+              className="material-symbols-outlined"
+              style={{
+                fontVariationSettings: `'FILL' ${star <= value ? 1 : 0}`,
+                color: star <= value ? "#eab308" : "var(--color-on-surface-variant, #6b7280)",
+              }}
+            >
+              star
+            </span>
+          </button>
+        ))}
+        <span className="text-sm font-bold text-on-surface-variant ml-2">
+          {value} Star{value > 1 ? "s" : ""}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const emptyReviewDraft: ReviewDraft = {
+  reviewerName: "",
+  reviewerPhoto: "",
+  experienceTitle: "",
+  rating: 5,
+  comment: "",
+  isActive: true,
+  sortOrder: 0,
+};
+
+function ReviewsManager() {
+  const [items, setItems] = useState<Review[]>([]);
+  const [draft, setDraft] = useState<ReviewDraft>(emptyReviewDraft);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getAdminReviews()
+      .then((result) => {
+        if (active) setItems(result.reviews);
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError instanceof Error ? requestError.message : "Could not load reviews.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  function updateDraft(updates: Partial<ReviewDraft>) {
+    setDraft((current) => ({ ...current, ...updates }));
+  }
+
+  function clearForm() {
+    setDraft({ ...emptyReviewDraft, sortOrder: items.length });
+    setEditingId(null);
+    setFormKey((current) => current + 1);
+  }
+
+  function editItem(item: Review) {
+    const { id, createdAt, updatedAt, ...editable } = item;
+    setDraft(editable);
+    setEditingId(id);
+    setError("");
+    setFormKey((current) => current + 1);
+  }
+
+  async function saveItem() {
+    if (!draft.reviewerName.trim() || !draft.comment.trim()) {
+      setError("Please fill in the reviewer's name and their comment.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      if (editingId) {
+        const result = await updateReview(editingId, draft);
+        setItems((current) =>
+          current.map((entry) => (entry.id === editingId ? result.review : entry))
+        );
+      } else {
+        const result = await createReview(draft);
+        setItems((current) => [...current, result.review]);
+      }
+      setDraft({ ...emptyReviewDraft, sortOrder: items.length + (editingId ? 0 : 1) });
+      setEditingId(null);
+      setFormKey((current) => current + 1);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not save review.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeItem(item: Review) {
+    if (!window.confirm(`Remove review by "${item.reviewerName}"?`)) return;
+    try {
+      await deleteReview(item.id);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not remove review.");
+      return;
+    }
+    setItems((current) => current.filter((entry) => entry.id !== item.id));
+    if (editingId === item.id) clearForm();
+  }
+
+  const experiences = getSiteContent().experiences;
+
+  return (
+    <section className="space-y-6">
+      <div>
+        <h2 className="font-headline text-3xl font-black">Customer Reviews</h2>
+        <p className="text-on-surface-variant mt-2">
+          Add real reviews/testimonials from your guests manually, including their photo.
+        </p>
+      </div>
+
+      {error && (
+        <p className="rounded-xl bg-red-50 p-4 text-sm font-bold text-red-700" role="alert">
+          {error}
+        </p>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-5 lg:sticky lg:top-28 bg-surface-container-low rounded-2xl p-5 sm:p-6 border border-outline-variant/10 space-y-5">
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="font-headline text-2xl font-black">{editingId ? "Edit Review" : "Add Review"}</h3>
+            {editingId && (
+              <button className="text-primary font-bold text-sm" onClick={clearForm} type="button">
+                Cancel Edit
+              </button>
+            )}
+          </div>
+
+          <ImageUpload
+            alt={draft.reviewerName || "Reviewer photo"}
+            key={formKey}
+            label="Reviewer Photo"
+            onUploaded={(reviewerPhoto) => updateDraft({ reviewerPhoto })}
+            value={draft.reviewerPhoto}
+          />
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <AdminField
+              label="Reviewer Name"
+              value={draft.reviewerName}
+              onChange={(reviewerName) => updateDraft({ reviewerName })}
+            />
+            <div className="flex flex-col">
+              <span className="block text-sm font-bold text-on-surface tracking-wide px-1 mb-2">
+                Experience
+              </span>
+              <select
+                className="h-14 bg-surface-container-high border-none rounded-xl px-4 text-on-surface capitalize font-bold"
+                value={draft.experienceTitle}
+                onChange={(event) => updateDraft({ experienceTitle: event.target.value })}
+              >
+                <option value="">General Review</option>
+                {experiences.map((exp) => (
+                  <option key={exp.id} value={exp.title}>
+                    {exp.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <StarRatingSelector
+              value={draft.rating}
+              onChange={(rating) => updateDraft({ rating })}
+            />
+            <div className="flex flex-col">
+              <span className="block text-sm font-bold text-on-surface tracking-wide px-1 mb-2">
+                Display Order
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  className="h-14 w-14 rounded-xl bg-surface-container-high text-on-surface font-bold"
+                  type="button"
+                  aria-label="Move review up"
+                  onClick={() => updateDraft({ sortOrder: Math.max(0, draft.sortOrder - 1) })}
+                  disabled={draft.sortOrder <= 0}
+                >
+                  −
+                </button>
+                <input
+                  className="h-14 flex-1 bg-surface-container-high border-none rounded-xl px-4 text-on-surface"
+                  type="number"
+                  min={0}
+                  value={draft.sortOrder}
+                  onChange={(event) => {
+                    const n = Number(event.target.value);
+                    updateDraft({ sortOrder: Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0 });
+                  }}
+                />
+                <button
+                  className="h-14 w-14 rounded-xl bg-surface-container-high text-on-surface font-bold"
+                  type="button"
+                  aria-label="Move review down"
+                  onClick={() => updateDraft({ sortOrder: draft.sortOrder + 1 })}
+                >
+                  +
+                </button>
+              </div>
+              <p className="text-xs font-bold text-on-surface-variant mt-2">
+                Lower number = shows earlier.
+              </p>
+            </div>
+          </div>
+
+          <AdminTextarea
+            label="Review Text"
+            value={draft.comment}
+            onChange={(comment) => updateDraft({ comment })}
+          />
+
+          <label className="flex items-center gap-3 rounded-xl bg-surface p-4 text-sm font-bold">
+            <input
+              checked={draft.isActive}
+              onChange={(event) => updateDraft({ isActive: event.target.checked })}
+              type="checkbox"
+            />
+            Visible on the public site
+          </label>
+
+          <button
+            className="w-full bg-primary text-on-primary px-5 py-4 rounded-xl font-bold"
+            disabled={saving}
+            onClick={saveItem}
+            type="button"
+          >
+            {saving ? "Saving..." : editingId ? "Save Changes" : "Publish Review"}
+          </button>
+        </div>
+
+        <div className="lg:col-span-7 bg-surface-container-low rounded-2xl p-5 sm:p-6 border border-outline-variant/10">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-headline text-2xl font-black">Published Reviews</h3>
+            <span className="rounded-full bg-surface px-3 py-1 text-xs font-bold text-on-surface-variant">
+              {items.length} review{items.length === 1 ? "" : "s"}
+            </span>
+          </div>
+
+          {loading ? (
+            <div className="py-16 text-center text-on-surface-variant">Loading reviews...</div>
+          ) : items.length === 0 ? (
+            <div className="py-16 text-center text-on-surface-variant">
+              <span className="material-symbols-outlined text-primary text-5xl mb-3">reviews</span>
+              <p>No customer reviews published yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {items.map((item) => (
+                <article
+                  className={`p-5 rounded-2xl border bg-surface flex flex-col sm:flex-row gap-4 justify-between items-start ${
+                    editingId === item.id ? "border-primary ring-2 ring-primary/20" : "border-outline-variant/10"
+                  }`}
+                  key={item.id}
+                >
+                  <div className="flex items-start gap-4 min-w-0">
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-container-high shrink-0">
+                      {item.reviewerPhoto ? (
+                        <img
+                          className="h-full w-full object-cover"
+                          src={item.reviewerPhoto}
+                          alt={item.reviewerName}
+                        />
+                      ) : (
+                        <span className="material-symbols-outlined text-3xl text-on-surface-variant flex items-center justify-center h-full w-full">
+                          person
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h4 className="font-headline text-base font-black truncate">{item.reviewerName}</h4>
+                        {item.experienceTitle && (
+                          <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider">
+                            {item.experienceTitle}
+                          </span>
+                        )}
+                        <span
+                          className={`h-2 w-2 rounded-full ${item.isActive ? "bg-green-600" : "bg-outline"}`}
+                          title={item.isActive ? "Visible" : "Hidden"}
+                        />
+                      </div>
+                      <div className="flex gap-0.5 mb-2 text-[#eab308]">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <span
+                            key={i}
+                            className="material-symbols-outlined text-lg"
+                            style={{ fontVariationSettings: `'FILL' ${i < item.rating ? 1 : 0}` }}
+                          >
+                            star
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-sm text-on-surface-variant/90 font-body leading-relaxed whitespace-pre-line italic">
+                        "{item.comment}"
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex sm:flex-col gap-2 shrink-0 w-full sm:w-auto">
+                    <button
+                      className="flex-1 bg-surface-container-high text-primary px-3 py-2 rounded-lg font-bold text-xs"
+                      onClick={() => editItem(item)}
+                      type="button"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="flex-grow bg-red-50 text-red-700 px-3 py-2 rounded-lg font-bold text-xs"
+                      onClick={() => removeItem(item)}
+                      type="button"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+

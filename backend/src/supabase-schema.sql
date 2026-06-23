@@ -174,3 +174,20 @@ CREATE TABLE IF NOT EXISTS portal_sessions (
 ALTER TABLE portal_sessions DISABLE ROW LEVEL SECURITY;
 
 CREATE INDEX IF NOT EXISTS idx_portal_sessions_booking ON portal_sessions(booking_id);
+
+-- ── Reviews ──────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS reviews (
+  id               TEXT PRIMARY KEY,
+  reviewer_name    TEXT NOT NULL,
+  reviewer_photo   TEXT NOT NULL DEFAULT '',
+  experience_title TEXT NOT NULL DEFAULT '',
+  rating           INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment          TEXT NOT NULL,
+  is_active        INTEGER NOT NULL DEFAULT 1,
+  sort_order       INTEGER NOT NULL DEFAULT 0,
+  created_at       TEXT NOT NULL,
+  updated_at       TEXT NOT NULL
+);
+ALTER TABLE reviews DISABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS idx_reviews_sort ON reviews(sort_order ASC, created_at DESC);

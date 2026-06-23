@@ -85,6 +85,7 @@ function matchRoute(method, pathname) {
     route("GET", /^\/api\/site$/, getSite),
     route("GET", /^\/api\/experiences$/, listExperiences),
     route("GET", /^\/api\/experiences\/([^/]+)$/, getExperience, ["id"]),
+    route("GET", /^\/api\/reviews$/, listPublicReviews),
     route("GET", /^\/api\/gallery$/, listGallery),
     route("GET", /^\/api\/uploads\/([^/]+)$/, getUpload, ["filename"]),
     route("POST", /^\/api\/contact$/, createInquiry, [], { body: true, rateLimit: "public-write" }),
@@ -102,6 +103,8 @@ function matchRoute(method, pathname) {
     route("POST", /^\/api\/portal\/([^/]+)\/payments$/, createPortalPayment, ["token"], { body: true, rateLimit: "payment" }),
     route("POST", /^\/api\/webhooks\/payments\/([^/]+)$/, paymentWebhook, ["provider"], { body: true }),
     route("POST", /^\/api\/admin\/login$/, adminLogin, [], { body: true, rateLimit: "login" }),
+    route("PUT", /^\/api\/admin\/settings$/, updateAdminSettings, [], { admin: true, body: true }),
+    route("GET", /^\/api\/admin\/audit-logs$/, getAuditLogs, [], { admin: true }),
     route("GET", /^\/api\/admin\/site$/, getSite, [], { admin: true }),
     route("PUT", /^\/api\/admin\/site$/, updateSite, [], { admin: true, body: true }),
     route("GET", /^\/api\/admin\/experiences$/, adminListExperiences, [], { admin: true }),
@@ -119,6 +122,10 @@ function matchRoute(method, pathname) {
     route("POST", /^\/api\/admin\/uploads$/, createUpload, [], { admin: true, body: true, maxBodyBytes: 22_000_000 }),
     route("GET", /^\/api\/admin\/inquiries$/, listInquiries, [], { admin: true }),
     route("PATCH", /^\/api\/admin\/inquiries\/([^/]+)$/, updateInquiry, ["id"], { admin: true, body: true }),
+    route("GET", /^\/api\/admin\/reviews$/, adminListReviews, [], { admin: true }),
+    route("POST", /^\/api\/admin\/reviews$/, createReview, [], { admin: true, body: true }),
+    route("PUT", /^\/api\/admin\/reviews\/([^/]+)$/, updateReview, ["id"], { admin: true, body: true }),
+    route("DELETE", /^\/api\/admin\/reviews\/([^/]+)$/, deleteReview, ["id"], { admin: true }),
   ];
 
   for (const candidate of routes) {
@@ -621,6 +628,44 @@ async function adminLogin({ supabase, body, appConfig }) {
   return { data: { token, expiresIn: appConfig.jwtTtlSeconds, admin: { id: admin.id, email: admin.email } } };
 }
 
+async function updateAdminSettings({ supabase, body, auth }) {
+  const currentPassword = text(body?.currentPassword, "Current Password", 200);
+  const newEmail = body?.newEmail ? emailValue(body.newEmail) : null;
+  const newPassword = body?.newPassword ? text(body.newPassword, "New Password", 200) : null;
+
+  if (newPassword && newPassword.length < 8) {
+    throw httpError(400, "New password must be at least 8 characters long");
+  }
+
+  const { data: admin } = await supabase.from("admins").select("*").eq("id", auth.sub).single();
+  if (!admin || !verifyPassword(currentPassword, admin.password_hash)) {
+    throw httpError(401, "Current password is incorrect");
+  }
+
+  const updates = { updated_at: new Date().toISOString() };
+  if (newEmail) updates.email = newEmail;
+  if (newPassword) updates.password_hash = hashPassword(newPassword);
+
+  if (!newEmail && !newPassword) {
+    return { data: { success: true } };
+  }
+
+  await supabase.from("admins").update(updates).eq("id", auth.sub);
+  await audit(supabase, auth.sub, "update", "admin_settings", auth.sub);
+
+  return { data: { success: true } };
+}
+
+async function getAuditLogs({ supabase }) {
+  const { data } = await supabase
+    .from("audit_log")
+    .select("*, admins(email)")
+    .order("created_at", { ascending: false })
+    .limit(50);
+    
+  return { data: { logs: (data ?? []).map(serializeAuditLog) } };
+}
+
 async function updateSite({ supabase, body, auth }) {
   const site = validateSite(body?.site ?? body);
   const now = new Date().toISOString();
@@ -872,6 +917,85 @@ async function listInquiries({ supabase }) {
   return { data: { inquiries: (data ?? []).map(serializeInquiry) } };
 }
 
+async function listPublicReviews({ supabase }) {
+  const { data } = await supabase
+    .from("reviews")
+    .select("*")
+    .eq("is_active", 1)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  return { data: { reviews: (data ?? []).map(serializeReview) } };
+}
+
+async function adminListReviews({ supabase }) {
+  const { data } = await supabase
+    .from("reviews")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  return { data: { reviews: (data ?? []).map(serializeReview) } };
+}
+
+async function createReview({ supabase, body, auth }) {
+  const reviewerName = text(body?.reviewerName, "Reviewer Name", 100);
+  const reviewerPhoto = optionalText(body?.reviewerPhoto, 500);
+  const experienceTitle = optionalText(body?.experienceTitle, 200);
+  const comment = text(body?.comment, "Comment", 2000);
+  const rating = Number(body?.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw httpError(400, "Rating must be between 1 and 5");
+  const now = new Date().toISOString();
+  const id = randomUUID();
+  await supabase.from("reviews").insert({
+    id,
+    reviewer_name: reviewerName,
+    reviewer_photo: reviewerPhoto,
+    experience_title: experienceTitle,
+    rating,
+    comment,
+    is_active: 1,
+    sort_order: 0,
+    created_at: now,
+    updated_at: now,
+  });
+  await audit(supabase, auth.sub, "create", "review", id);
+  const { data: item } = await supabase.from("reviews").select("*").eq("id", id).single();
+  return { status: 201, data: { review: serializeReview(item) } };
+}
+
+async function updateReview({ supabase, body, params, auth }) {
+  const { data: existing } = await supabase.from("reviews").select("id").eq("id", params.id).single();
+  if (!existing) throw httpError(404, "Review not found");
+  const reviewerName = text(body?.reviewerName, "Reviewer Name", 100);
+  const reviewerPhoto = optionalText(body?.reviewerPhoto, 500);
+  const experienceTitle = optionalText(body?.experienceTitle, 200);
+  const comment = text(body?.comment, "Comment", 2000);
+  const rating = Number(body?.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw httpError(400, "Rating must be between 1 and 5");
+  const isActive = body?.isActive === true || body?.isActive === 1 ? 1 : 0;
+  const sortOrder = typeof body?.sortOrder === "number" ? body.sortOrder : 0;
+  const now = new Date().toISOString();
+  await supabase.from("reviews").update({
+    reviewer_name: reviewerName,
+    reviewer_photo: reviewerPhoto,
+    experience_title: experienceTitle,
+    rating,
+    comment,
+    is_active: isActive,
+    sort_order: sortOrder,
+    updated_at: now,
+  }).eq("id", params.id);
+  await audit(supabase, auth.sub, "update", "review", params.id);
+  const { data: item } = await supabase.from("reviews").select("*").eq("id", params.id).single();
+  return { data: { review: serializeReview(item) } };
+}
+
+async function deleteReview({ supabase, params, auth }) {
+  const { data } = await supabase.from("reviews").delete().eq("id", params.id).select();
+  if (!data?.length) throw httpError(404, "Review not found");
+  await audit(supabase, auth.sub, "delete", "review", params.id);
+  return { status: 204, empty: true };
+}
+
 async function updateInquiry({ supabase, params, body, auth }) {
   const status = body?.status;
   if (!inquiryStatuses.has(status)) throw httpError(400, "Invalid inquiry status");
@@ -1069,6 +1193,33 @@ function serializeInquiry(row) {
     phone: row.phone,
     message: row.message,
     status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function serializeAuditLog(row) {
+  return {
+    id: row.id,
+    adminEmail: row.admins?.email ?? "Unknown",
+    action: row.action,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    details: JSON.parse(row.details_json || "{}"),
+    createdAt: row.created_at,
+  };
+}
+
+function serializeReview(row) {
+  return {
+    id: row.id,
+    reviewerName: row.reviewer_name,
+    reviewerPhoto: row.reviewer_photo,
+    experienceTitle: row.experience_title,
+    rating: row.rating,
+    comment: row.comment,
+    isActive: row.is_active === 1 || row.is_active === true,
+    sortOrder: row.sort_order,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

@@ -11,7 +11,8 @@
     "start": "node src/server.js",
     "build": "echo 'No build required'",
     "test": "node --test",
-    "seed": "node src/seed.js"
+    "seed": "node src/seed.js",
+    "set-admin": "node src/set-admin.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2"
