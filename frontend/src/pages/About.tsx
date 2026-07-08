@@ -47,7 +47,7 @@ export default function About() {
           {/* Bento Grid Content */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-auto md:h-[600px]">
             <div className="md:col-span-8 min-h-[360px] bg-surface rounded-xl overflow-hidden relative group">
-              <img className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7966SouRc5zHc0oFnseCvOV7vUuvMV7AE3cDz6qmC0AzSDlh1dBIl7i0znUREFlVRqMCj3JLtkLDCWqGjOmUB2KxtEjTPQQcIxQxRAIEqjHx5AEHqPgvPtmBPgS33HQ0Dm_wPvGkqjRcBt_NlxhUNi5KjY-nU9Du3sEfXpawiYH5uvFFToHbKMqaN_efTrcyzWR5v2lQNnKcjVoqmtbGHKDmXSmBXx4DB_heV8dVnLpErzsFp3PNE04YUcLfDPdlTX02tY410dVQ" />
+              <img className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7966SouRc5zHc0oFnseCvOV7vUuvMV7AE3cDz6qmC0AzSDlh1dBIl7i0znUREFlVRqMCj3JLtkLDCWqGjOmUB2KxtEjTPQQcIxQxRAIEqjHx5AEHqPgvPtmBPgS33HQ0Dm_wPvGkqjRcBt_NlxhUNi5KjY-nU9Du3sEfXpawiYH5uvFFToHbKMqaN_efTrcyzWR5v2lQNnKcjVoqmtbGHKDmXSmBXx4DB_heV8dVnLpErzsFp3PNE04YUcLfDPdlTX02tY410dVQ" alt=""/>
               <div className="absolute inset-0 bg-gradient-to-t from-on-background/80 via-transparent to-transparent flex flex-col justify-end p-6 sm:p-10">
                 <h3 className="font-headline text-white text-3xl font-bold mb-2">The Energetic Ekizino</h3>
                 <p className="text-white/80 font-body max-w-md">Our signature dance, where the rhythmic thumping of feet mimics the strength required to cultivate the mountain sides.</p>
