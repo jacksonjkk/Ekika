@@ -1,4 +1,8 @@
 import { Link } from "react-router-dom";
+import Mellon from "../assets/mellon.png";
+import buny from "../assets/buny.png";
+
+
 
 export default function About() {
   return (
@@ -15,7 +19,7 @@ export default function About() {
           </div>
           <div className="order-1 md:order-2 relative">
             <div className="aspect-[4/3] md:aspect-[4/5] rounded-xl overflow-hidden shadow-2xl">
-              <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTMPL4XpqkDGSbhxd9w5buJ71zObqahky9_OAIzFbkswjqEKWTgO6-8E1_XvCcHAuD85IJYIJebRhoxm06jVSBnnZj0WduVNY-k6r7yCadPSGzm8Dw839G-YwcbmnI96BPgYodTC8YRd1C-fzfOSMGJY87V8WST3P8TXIWKcM5GzuSb_ZJ7OxVqCxFj6v6zWT5tBI32byZBTOlTouscoMFH-UnunddzHQxT-MfLHYo89jvvQC9GP645cIsyZZ73DrwVTkn8Bj56ZM" />
+              <img className="w-full h-full object-cover" src={buny} alt="Bunyonyi"/>
             </div>
             <div className="absolute -bottom-6 -left-6 bg-surface-container-lowest p-6 rounded-xl shadow-lg max-w-[240px] hidden md:block">
               <p className="font-headline font-bold text-primary text-2xl mb-1">2,500m</p>
@@ -56,7 +60,7 @@ export default function About() {
                 <p className="font-body text-sm text-on-surface-variant">Lake Bunyonyi, the "Place of Little Birds," serves as our spiritual and physical anchor, home to 29 historical islands.</p>
               </div>
               <div className="bg-primary rounded-xl overflow-hidden relative">
-                <img className="w-full h-full object-cover opacity-40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYEGiW1pbNRkLkRUWbhQrpy4zWX4l6YW94qOa4BzE6rEM4HEfHnC0qhO_EFM_IKbJzWAETPVvln-gGbBNRwKkqeiJ0WYbadAtNzOP7a9tZBpmSD6u3NTQGwwK9CJn2VKpcO_Q6jxMIFfwcjTQ1IeXsIOXWP6JIC_MJKVkgtGOlgdNtaOonUu6wwNeNolN5yp_b4c06hCBnabKv_7uNBGM3Jw9JdhgYL6cOErMJThibw0Dran72cSMUQiYAalJKhK4MckjoG1pgSvo" />
+                <img className="w-full h-full object-cover opacity-40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYEGiW1pbNRkLkRUWbhQrpy4zWX4l6YW94qOa4BzE6rEM4HEfHnC0qhO_EFM_IKbJzWAETPVvln-gGbBNRwKkqeiJ0WYbadAtNzOP7a9tZBpmSD6u3NTQGwwK9CJn2VKpcO_Q6jxMIFfwcjTQ1IeXsIOXWP6JIC_MJKVkgtGOlgdNtaOonUu6wwNeNolN5yp_b4c06hCBnabKv_7uNBGM3Jw9JdhgYL6cOErMJThibw0Dran72cSMUQiYAalJKhK4MckjoG1pgSvo" alt=""/>
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
                   <span className="material-symbols-outlined text-white text-5xl mb-4">texture</span>
                   <h4 className="font-headline text-white text-2xl font-bold">Woven History</h4>
@@ -74,7 +78,7 @@ export default function About() {
           <div className="relative">
             <div className="absolute -top-12 -right-12 w-64 h-64 bg-primary-fixed-dim rounded-full blur-3xl opacity-30 -z-10"></div>
             <div className="rounded-2xl overflow-hidden aspect-square shadow-2xl ring-8 ring-surface-container">
-              <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAIODs1HIj148NnDw7phZTvpxzx45eEclj4JfEmGlKlBeijJ7ZeOWrnjYxtF4HLMbM5rna-2_myeK4UvCa1vqnEFPwE7XJkK47uC8h_-O6rlWzrgBLpsqqmhfGdTgrmwNn6QO4GRqKQeVnZ18EhLGNWBvD04lkDuyWV5V39glZn4FukPe0krk2NnLEbrL-wFPNK5UrJCpN477kmzIOBtNiN0jARqOda777i8LQzDnJoCt4F-U1cpW36FCDgjzI13dUPmufpHPpch4" />
+              <img className="w-full h-full object-cover" src={Mellon} alt="ceo" />
             </div>
             <div className="mt-8 lg:absolute lg:-bottom-10 lg:right-10 bg-surface p-6 md:p-8 rounded-xl shadow-xl border border-outline-variant/20 max-w-sm relative z-10 mx-4 lg:mx-0">
               <p className="font-body italic text-on-surface-variant text-base md:text-lg leading-relaxed text-center lg:text-left">
@@ -82,7 +86,7 @@ export default function About() {
               </p>
               <div className="mt-4 flex items-center justify-center lg:justify-start gap-3">
                 <div className="h-[1px] w-8 bg-primary"></div>
-                <p className="font-headline font-bold text-on-surface text-sm md:text-base">Tumusiime Brian, Founder</p>
+                <p className="font-headline font-bold text-on-surface text-sm md:text-base">Mellon, Founder</p>
               </div>
             </div>
           </div>
