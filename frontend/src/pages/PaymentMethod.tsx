@@ -83,7 +83,7 @@ export default function PaymentMethod() {
 
         <aside className="lg:col-span-4 bg-surface-container-low rounded-2xl p-5 sm:p-7 border border-outline-variant/10">
           <p className="text-xs uppercase tracking-widest font-bold text-primary mb-2">Amount</p>
-          <p className="font-headline text-4xl sm:text-5xl font-black text-on-surface mb-6 break-words">{booking.amountDue}</p>
+          <p className="font-headline text-4xl sm:text-5xl font-black text-on-surface mb-6 break-words">{priceLabel(booking.amountDue)}</p>
           <PaymentFields method={selectedMethod} />
           <div className="grid gap-3">
             <button className="bg-primary text-on-primary min-h-14 rounded-xl px-3 py-3 font-bold uppercase text-sm" onClick={() => simulatePayment("success")} type="button">
@@ -102,6 +102,10 @@ export default function PaymentMethod() {
   );
 }
 
+function priceLabel(price: string) {
+  return price === "$0" || price === "$0.00" ? "To confirm" : price;
+}
+
 function PaymentFields({ method }: { method: string }) {
   if (method === "mobile-money") {
     return (
@@ -110,9 +114,9 @@ function PaymentFields({ method }: { method: string }) {
           <span className="block text-sm font-bold mb-2">Mobile Money Number</span>
           <input className="w-full h-12 rounded-xl bg-surface px-4" placeholder="+256 7XX XXX XXX" type="tel" />
         </label>
-        <label className="block">
+        <label className="block" htmlFor="mobile-money-network">
           <span className="block text-sm font-bold mb-2">Network</span>
-          <select className="w-full h-12 rounded-xl bg-surface px-4">
+          <select className="w-full h-12 rounded-xl bg-surface px-4" id="mobile-money-network">
             <option>MTN Mobile Money</option>
             <option>Airtel Money</option>
           </select>

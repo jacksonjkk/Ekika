@@ -48,7 +48,7 @@ export default function Checkout() {
               </div>
             )}
             <div>
-              <p className="text-xs uppercase tracking-widest font-bold text-primary mb-2">Experience</p>
+              <p className="text-xs uppercase tracking-widest font-bold text-primary mb-2">Package</p>
               <h2 className="font-headline text-3xl font-black text-on-surface">{booking.experienceTitle}</h2>
             </div>
 
@@ -58,7 +58,7 @@ export default function Checkout() {
               <Info label="Guests" value={String(booking.guestCount)} />
               <Info label="Name" value={booking.guestName} />
               <Info label="Phone" value={booking.phone} />
-              <Info label="Total" value={booking.totalAmount ?? booking.amountDue} />
+              <Info label="Total" value={priceLabel(booking.totalAmount ?? booking.amountDue)} />
               <Info label="Paying" value={booking.paymentChoice === "full" ? "Full amount" : "Deposit"} />
             </div>
 
@@ -67,9 +67,9 @@ export default function Checkout() {
             <div className="flex flex-col min-[380px]:flex-row min-[380px]:items-end justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-widest font-bold text-on-surface-variant">Amount Due</p>
-                <p className="text-sm text-on-surface-variant">{booking.paymentChoice === "full" ? "Full amount" : "Deposit"} due now.</p>
+                <p className="text-sm text-on-surface-variant">{priceLabel(booking.amountDue) === "To confirm" ? "The team will confirm the payable amount." : `${booking.paymentChoice === "full" ? "Full amount" : "Deposit"} due now.`}</p>
               </div>
-              <p className="font-headline text-3xl sm:text-4xl font-black text-primary break-words">{booking.amountDue}</p>
+              <p className="font-headline text-3xl sm:text-4xl font-black text-primary break-words">{priceLabel(booking.amountDue)}</p>
             </div>
 
             <div className="grid gap-3">
@@ -87,6 +87,10 @@ export default function Checkout() {
       </div>
     </main>
   );
+}
+
+function priceLabel(price: string) {
+  return price === "$0" || price === "$0.00" ? "To confirm" : price;
 }
 
 function Info({ label, value }: { label: string; value: string }) {

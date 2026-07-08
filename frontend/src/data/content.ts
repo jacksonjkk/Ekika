@@ -19,6 +19,7 @@ export type EditableExperience = {
   price: string;
   duration: string;
   image: string;
+  slideshowImages: string[];
   tag: string;
   included: string[];
 };
@@ -29,6 +30,8 @@ export type SiteContent = {
 };
 
 const STORAGE_KEY = "ekika-site-content";
+const packageImage = "https://lh3.googleusercontent.com/aida-public/AB6AXuCUF5Q0elMs1ZTJ_ulIBlxqFQbruH-KrYah0t-NagmCbAKI3N-YwphzPXuoqk9f90lafZpEGhv0rzw6u8ZWS13EV1IihaKToXHxsvdk3LBsQpD09L0syToSfhChPjkBE2K017w8LT70bi9JpAV24K3ixguF0wZTFnEduYtyKw7Ma6OijuRIA2Un-TUEwi2h2787Q-DNlT2nVSENhIlg-my0eoSjl_vdcgzgLTdnm2q2oD6wxepoESsiuq7D2Z4s6q0IPkdqrTqmmIY";
+const experienceOrder = ["full-day-package", "half-day-package"];
 
 export const defaultContent: SiteContent = {
   site: {
@@ -43,75 +46,89 @@ export const defaultContent: SiteContent = {
   },
   experiences: [
     {
-      id: "food-cooking",
-      title: "Cultural Food Tasting & Cooking Lessons",
-      description: "Master the art of preparing traditional millet bread (Oburo) and enjoy the rich, earthy flavors of our highland soil.",
-      price: "$45",
-      duration: "3 Hours",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDs1DwY3lmZUoGlvfZoINxau6S8Hz3Jj4HzIKgdzDst0dK9yx6I3KYH4Sc6hc0TPTdshhegVCwf2rQoxzWSSj3YjHuhnEXn4LP_vLwV3Q9w5mxyOkU-6l3qvbxDGUjnihHA3X52eD_meCbolk9HjaYb6AynB3_GnGJ0qGjJoQpDCrUf8uDNzuP5MD7wwoy_qjyBu2tMysDL0kcWULW1AvuduuLGKS9YY1jIZBDmMW_VWxmOjtx3ldzzC3SeDgFOLrzrRqbL7j7QVA0",
-      tag: "Most Popular",
-      included: ["Traditional lunch included", "Local host guide", "Recipe notes"],
+      id: "full-day-package",
+      title: "Full Day - 9 Hours",
+      description: "A nine-hour cultural immersion with hands-on craft making, local food and drink, dance, community walks, and campfire storytelling.",
+      price: "$0",
+      duration: "9 Hours",
+      image: packageImage,
+      slideshowImages: [packageImage],
+      tag: "Full Day",
+      included: [
+        "Craft making",
+        "Traditional lunch",
+        "Local porridge Bushera",
+        "Local beer Omuramba",
+        "Dance Ekizino",
+        "Cultural",
+        "Campfire story telling",
+        "Community walks",
+      ],
     },
     {
-      id: "storytelling",
-      title: "Story Telling Sessions",
-      description: "Gather around the evening embers as elders recount legends of the ancestors and the spirits of the mountains.",
-      price: "$25",
-      duration: "2 Hours",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuA7966SouRc5zHc0oFnseCvOV7vUuvMV7AE3cDz6qmC0AzSDlh1dBIl7i0znUREFlVRqMCj3JLtkLDCWqGjOmUB2KxtEjTPQQcIxQxRAIEqjHx5AEHqPgvPtmBPgS33HQ0Dm_wPvGkqjRcBt_NlxhUNi5KjY-nU9Du3sEfXpawiYH5uvFFToHbKMqaN_efTrcyzWR5v2lQNnKcjVoqmtbGHKDmXSmBXx4DB_heV8dVnLpErzsFp3PNE04YUcLfDPdlTX02tY410dVQ",
-      tag: "Evening",
-      included: ["Elder-led session", "Tea by the hearth", "Cultural Q&A"],
-    },
-    {
-      id: "traditional-games",
-      title: "Traditional Games",
-      description: "Test your agility and strength with authentic Kiga sports, from wrestling to traditional target throwing.",
-      price: "$20",
-      duration: "2 Hours",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAQQOa1V3l9rh9DrmmIH-g20B5CFV_Git0PETHxXW-fhnwRHdVmmJ2TArZFaZ7YOGy28335aiQxay2CnWeaVnbyX4zoGW2DJjH12ydp_lc9kAwWpwgqasnhZKfJHO3OT4YF_-HDDIxAtBuFZCaPaAga8yWHn4VeoVO40o8TkSQHuYkLDLLIiwCer6xwDBOzq98eZurNV5HUE7GI9s-HDQTR9PQI-uFtrk9AHsguHbjg6egw8uteO3MOFbKIr2N6JsZE_BpZt76_mSY",
-      tag: "Active",
-      included: ["Group activities", "Guide supervision", "Family friendly"],
-    },
-    {
-      id: "attire",
-      title: "Ekika Dressing & Attire",
-      description: "Learn the symbolism behind our traditional skins and beads. Includes a portrait session in full attire.",
-      price: "$35",
-      duration: "2 Hours",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAzag7VJw_-fg_tK1fZBJ9eqTQr60G0a8LaHgsfm8kLZDplro_-sYStc5T6Y8tQmVq4bed1CL44nkYIn3uJdoe9ahV0p3rs0WJHTKso49-6cYCLuD2h7D8h6qDJWsqIzNTCZ1Yuqc5wql_C4ikAKjOvsSCqVbOhcnOdk068K2vTctcJURUTlHSVD3PWCoCKuB2Q_unpv7QPgzewqjjGVKIrCXGvpdEPkKYLraNPM9HQrhpP1bgN8BFtMmSQ4KiWsomTKMlNFDm9F08",
-      tag: "Portrait",
-      included: ["Attire guidance", "Portrait session", "Symbolism talk"],
-    },
-    {
-      id: "full-day",
-      title: "Full Cultural Day Package",
-      description: "The definitive Kigezi journey. Includes all activities plus a traditional banquet and highland trekking.",
-      price: "$120",
-      duration: "8 Hours",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCUF5Q0elMs1ZTJ_ulIBlxqFQbruH-KrYah0t-NagmCbAKI3N-YwphzPXuoqk9f90lafZpEGhv0rzw6u8ZWS13EV1IihaKToXHxsvdk3LBsQpD09L0syToSfhChPjkBE2K017w8LT70bi9JpAV24K3ixguF0wZTFnEduYtyKw7Ma6OijuRIA2Un-TUEwi2h2787Q-DNlT2nVSENhIlg-my0eoSjl_vdcgzgLTdnm2q2oD6wxepoESsiuq7D2Z4s6q0IPkdqrTqmmIY",
-      tag: "Best Value",
-      included: ["Traditional lunch included", "Professional photography", "Highland trekking"],
+      id: "half-day-package",
+      title: "Half Day - 5 Hours",
+      description: "A five-hour cultural visit centered on village walks, traditional cooking, craft making, and storytelling.",
+      price: "$0",
+      duration: "5 Hours",
+      image: packageImage,
+      slideshowImages: [packageImage],
+      tag: "Half Day",
+      included: [
+        "Village walks",
+        "Traditional cooking",
+        "Ekizino",
+        "Traditional lunch",
+        "Local porridge Bushera preparation",
+        "Craft making",
+        "Story telling",
+      ],
     },
   ],
 };
 
 export function createBlankExperience(): EditableExperience {
   return {
-    id: `experience-${Date.now()}`,
-    title: "New Cultural Experience",
-    description: "Describe what guests will see, learn, taste, or do during this experience.",
+    id: `package-${Date.now()}`,
+    title: "New Cultural Package",
+    description: "Describe what guests will see, learn, taste, or do during this package.",
     price: "$0",
-    duration: "2 Hours",
+    duration: "5 Hours",
     image: defaultContent.experiences[0].image,
+    slideshowImages: [defaultContent.experiences[0].image],
     tag: "New",
     included: ["Local guide", "Cultural introduction", "Flexible schedule"],
+  };
+}
+
+function normalizeExperience(experience: EditableExperience): EditableExperience {
+  const included = Array.isArray(experience.included)
+    ? experience.included.filter((item) => typeof item === "string" && item.trim())
+    : [];
+  const slideshowImages = Array.isArray(experience.slideshowImages)
+    ? experience.slideshowImages.filter((image) => typeof image === "string" && image.trim())
+    : [];
+
+  return {
+    ...experience,
+    included,
+    slideshowImages: slideshowImages.length > 0 ? slideshowImages : (experience.image ? [experience.image] : []),
   };
 }
 
 function normalizeContent(content: SiteContent): SiteContent {
   return {
     site: { ...defaultContent.site, ...content.site },
-    experiences: Array.isArray(content.experiences) ? content.experiences : defaultContent.experiences,
+    experiences: Array.isArray(content.experiences)
+      ? [...content.experiences].map(normalizeExperience).sort((left, right) => {
+          const leftIndex = experienceOrder.indexOf(left.id);
+          const rightIndex = experienceOrder.indexOf(right.id);
+          if (leftIndex === -1 && rightIndex === -1) return 0;
+          if (leftIndex === -1) return 1;
+          if (rightIndex === -1) return -1;
+          return leftIndex - rightIndex;
+        })
+      : defaultContent.experiences,
   };
 }
 

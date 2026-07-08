@@ -118,7 +118,7 @@ export default function About() {
           <h2 className="font-headline text-3xl sm:text-4xl md:text-6xl font-black text-inverse-on-surface mb-8 relative z-10">Ready to walk the <br /><span className="text-primary-fixed-dim italic">Highland trails?</span></h2>
           <div className="flex flex-col md:flex-row gap-6 justify-center relative z-10">
             <Link to="/experiences" className="bg-primary hover:bg-primary-container text-white px-6 sm:px-10 py-4 sm:py-5 rounded-lg font-label font-bold uppercase text-sm transition-all shadow-lg hover:-translate-y-1">
-              View Our Experiences
+              View Our Packages
             </Link>
             <Link to="/contact" className="bg-transparent border-2 border-outline-variant text-inverse-on-surface hover:bg-white/5 px-6 sm:px-10 py-4 sm:py-5 rounded-lg font-label font-bold uppercase text-sm transition-all">
               Contact Brian

@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS site_settings (
   updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS experiences (
+CREATE TABLE IF NOT EXISTS packages (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS experiences (
   currency TEXT NOT NULL DEFAULT 'USD',
   duration TEXT NOT NULL,
   image_url TEXT NOT NULL DEFAULT '',
+  slideshow_images_json TEXT NOT NULL DEFAULT '[]',
   tag TEXT NOT NULL DEFAULT '',
   included_json TEXT NOT NULL DEFAULT '[]',
   sort_order INTEGER NOT NULL DEFAULT 0,
@@ -41,7 +42,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   id TEXT PRIMARY KEY,
   portal_token_hash TEXT NOT NULL UNIQUE,
   customer_id TEXT REFERENCES customers(id) ON DELETE SET NULL,
-  experience_id TEXT REFERENCES experiences(id) ON DELETE SET NULL,
+  experience_id TEXT REFERENCES packages(id) ON DELETE SET NULL,
   experience_title TEXT NOT NULL,
   unit_price_cents INTEGER NOT NULL CHECK (unit_price_cents >= 0),
   experience_image TEXT NOT NULL DEFAULT '',

@@ -6,7 +6,7 @@ const statusCopy = {
   success: {
     label: "Payment Successful",
     title: "You're all set!",
-    body: "Your payment is confirmed and your experience is now available in your dashboard.",
+    body: "Your payment is confirmed and your package is now available in your dashboard.",
     icon: "check_circle",
     iconClass: "bg-secondary-container text-on-secondary-container",
   },
@@ -63,7 +63,7 @@ export default function PaymentStatus() {
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="text-xs uppercase tracking-widest font-bold text-primary mb-1">Your Experience</p>
+                  <p className="text-xs uppercase tracking-widest font-bold text-primary mb-1">Your Package</p>
                   <h2 className="font-headline text-xl sm:text-2xl font-black text-on-surface break-words">{booking.experienceTitle}</h2>
                   <p className="mt-1 text-sm text-on-surface-variant">
                     {formatDate(booking.preferredDate)} · {booking.guestCount} guest{booking.guestCount === 1 ? "" : "s"}

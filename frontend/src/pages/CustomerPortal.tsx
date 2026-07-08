@@ -86,20 +86,20 @@ export default function CustomerPortal() {
           <span className="material-symbols-outlined text-primary text-5xl mb-4">calendar_today</span>
           <h2 className="font-headline text-2xl font-bold text-on-surface mb-2">No bookings found</h2>
           <p className="text-on-surface-variant max-w-md mx-auto mb-6">
-            You haven't scheduled any Kiga cultural experiences yet. Explore our packages and secure a spot.
+            You haven't scheduled any Kiga cultural packages yet. Explore our packages and secure a spot.
           </p>
           <Link
             to="/experiences"
             className="inline-flex bg-primary hover:bg-primary-container text-white px-6 py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider"
           >
-            Explore Experiences
+            Explore Packages
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Panel: Booking List */}
           <div className="lg:col-span-5 space-y-6">
-            <h2 className="font-headline text-xl font-black text-on-surface px-1">Upcoming Experiences ({upcoming.length})</h2>
+            <h2 className="font-headline text-xl font-black text-on-surface px-1">Upcoming Packages ({upcoming.length})</h2>
             <div className="space-y-4">
               {upcoming.map((b) => (
                 <button

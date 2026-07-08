@@ -1,10 +1,12 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { loginCustomer } from "../data/api";
 
 export default function CustomerAccess() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = safeRedirectPath(searchParams.get("redirect"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -18,7 +20,7 @@ export default function CustomerAccess() {
 
     try {
       await loginCustomer(email, password);
-      navigate("/customer-portal", { replace: true });
+      navigate(redirectPath, { replace: true });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Invalid email or password");
     } finally {
@@ -94,11 +96,16 @@ export default function CustomerAccess() {
 
         <div className="mt-8 pt-6 border-t border-outline-variant/10 text-center text-sm text-on-surface-variant">
           Don&apos;t have an account?{" "}
-          <Link className="text-primary font-bold hover:underline" to="/signup">
+          <Link className="text-primary font-bold hover:underline" to={`/signup?redirect=${encodeURIComponent(redirectPath)}`}>
             Create one
           </Link>
         </div>
       </div>
     </main>
   );
+}
+
+function safeRedirectPath(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/customer-portal";
+  return value;
 }

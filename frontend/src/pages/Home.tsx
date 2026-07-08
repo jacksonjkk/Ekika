@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getPublicReviews } from "../data/api";
 import type { Review } from "../data/api";
+import Image from "../../../images/buny.png";
 
 export default function Home() {
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -76,21 +77,21 @@ export default function Home() {
       <header className="relative min-h-[680px] h-[100svh] w-full overflow-hidden flex items-center">
         <div className="absolute inset-0 z-0">
           <img
-            alt="Scenic highland landscape"
+            alt="Traditional dance performance"
             className="w-full h-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4CTXUHSJZR_5__C71jt18vCqz2yHvcNEXHjT0msxfXiObCQNHWz8-fx9TgfgrUHGAUEUNdq5lG3o47kNAtwggd3MD3jw-yZHugi_ESS4tBE285_hAR50M2db-U0CXgKZpxZJkSTnkFIW7FsZIZsu-_6-XDiopPc7mcT1HmumEq-V2UqdTkwPsYPceTV5nb8tVDN_SRqsR5VQfCWl3xd9VjBj0ZVz5YMJpuLmPbg0oe87vcsEa5Fp_vI3JX8MJHzfucLaazQlw2Ag"
+            src={Image}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-on-background/20 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-background/55 via-background/20 to-transparent"></div>
         </div>
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 md:px-12 w-full pt-20 sm:pt-28">
-          <div className="max-w-3xl">
-            <span className="inline-block py-1 px-4 bg-tertiary/10 text-tertiary rounded-full text-xs font-bold uppercase tracking-widest mb-6">
+          <div className="max-w-3xl rounded-[2rem] bg-background/5 backdrop-blur-[2px] p-5 sm:p-6 md:p-8 shadow-2xl shadow-black/10">
+            <span className="inline-block py-1 px-4 bg-white/15 text-white rounded-full text-xs font-bold uppercase tracking-widest mb-6">
               Traditional Wisdom & Cultural Roots
             </span>
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-headline font-extrabold text-on-surface leading-[1.08] mb-6 sm:mb-8">
-              Experience the <span className="text-primary italic">Authentic</span> Kiga Culture
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-headline font-extrabold text-white leading-[1.08] mb-6 sm:mb-8">
+              Experience the <span className="text-primary/90 italic">Authentic</span> Kiga Culture
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-on-surface-variant font-body mb-8 sm:mb-10 leading-relaxed max-w-2xl">
+            <p className="text-base sm:text-lg md:text-xl text-white/90 font-body mb-8 sm:mb-10 leading-relaxed max-w-2xl">
               Journey into the heart of the Kigezi Highlands. Discover the rhythm of the hills through ancient songs,
               traditional craft, and the enduring spirit of the people of the mountains.
             </p>
@@ -99,7 +100,7 @@ export default function Home() {
                 to="/experiences"
                 className="flex min-h-14 w-full sm:w-auto items-center justify-center bg-gradient-to-r from-primary to-primary-container text-white px-6 sm:px-8 py-4 rounded-lg font-label font-bold text-sm uppercase shadow-xl shadow-primary/20 hover:scale-105 transition-transform text-center"
               >
-                Explore Experiences
+                Explore Packages
               </Link>
               <Link
                 to="/about"
@@ -253,4 +254,4 @@ export default function Home() {
     </>
   );
 }
-
+ 

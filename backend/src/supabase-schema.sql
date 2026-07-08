@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS site_settings (
 );
 ALTER TABLE site_settings DISABLE ROW LEVEL SECURITY;
 
--- ── Experiences ──────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS experiences (
+-- ── Packages ───────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS packages (
   id            TEXT PRIMARY KEY,
   title         TEXT NOT NULL,
   description   TEXT NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS experiences (
   created_at    TEXT NOT NULL,
   updated_at    TEXT NOT NULL
 );
-ALTER TABLE experiences DISABLE ROW LEVEL SECURITY;
+ALTER TABLE packages DISABLE ROW LEVEL SECURITY;
 
 -- ── Customers ────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS customers (
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   id                 TEXT PRIMARY KEY,
   portal_token_hash  TEXT NOT NULL UNIQUE,
   customer_id        TEXT REFERENCES customers(id) ON DELETE SET NULL,
-  experience_id      TEXT REFERENCES experiences(id) ON DELETE SET NULL,
+  experience_id      TEXT REFERENCES packages(id) ON DELETE SET NULL,
   experience_title   TEXT NOT NULL,
   unit_price_cents   INTEGER NOT NULL CHECK (unit_price_cents >= 0),
   experience_image   TEXT NOT NULL DEFAULT '',

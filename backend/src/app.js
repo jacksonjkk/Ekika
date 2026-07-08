@@ -154,7 +154,7 @@ async function getSite({ supabase }) {
 
 async function listExperiences({ supabase }) {
   const { data } = await supabase
-    .from("experiences")
+    .from("packages")
     .select("*")
     .eq("is_active", 1)
     .order("sort_order")
@@ -163,13 +163,13 @@ async function listExperiences({ supabase }) {
 }
 
 async function adminListExperiences({ supabase }) {
-  const { data } = await supabase.from("experiences").select("*").order("sort_order").order("created_at");
+  const { data } = await supabase.from("packages").select("*").order("sort_order").order("created_at");
   return { data: { experiences: (data ?? []).map(serializeExperience) } };
 }
 
 async function getExperience({ supabase, params }) {
   const { data } = await supabase
-    .from("experiences")
+    .from("packages")
     .select("*")
     .eq("id", params.id)
     .single();
@@ -239,19 +239,13 @@ async function createBooking({ supabase, body, appConfig, request }) {
   const customerSession = await findCustomerSession(supabase, request);
   const input = validateBooking(body);
 
-  let experience;
-  if (input.experienceId) {
-    const { data } = await supabase
-      .from("experiences")
-      .select("*")
-      .eq("id", input.experienceId)
-      .eq("is_active", 1)
-      .single();
-    if (!data) throw httpError(400, "Please select an available experience.");
-    experience = data;
-  } else {
-    experience = { id: null, title: input.experienceTitle, price_cents: 0, image_url: "", currency: "USD" };
-  }
+  const { data: experience } = await supabase
+    .from("packages")
+    .select("*")
+    .eq("id", input.experienceId)
+    .eq("is_active", 1)
+    .single();
+  if (!experience) throw httpError(400, "Please select an available package.");
 
   const totalCents = experience.price_cents * input.guestCount;
   const amountDueCents =
@@ -687,19 +681,19 @@ async function updateSite({ supabase, body, auth }) {
 async function createExperience({ supabase, body, auth }) {
   const input = validateExperience(body?.experience ?? body);
   const id = input.id || randomUUID();
-  const { data: exists } = await supabase.from("experiences").select("id").eq("id", id).single();
+  const { data: exists } = await supabase.from("packages").select("id").eq("id", id).single();
   if (exists) throw httpError(409, "Experience ID already exists");
 
   const now = new Date().toISOString();
   const { data: maxRow } = await supabase
-    .from("experiences")
+    .from("packages")
     .select("sort_order")
     .order("sort_order", { ascending: false })
     .limit(1)
     .single();
   const order = maxRow ? maxRow.sort_order + 1 : 0;
 
-  await supabase.from("experiences").insert({
+  await supabase.from("packages").insert({
     id,
     title: input.title,
     description: input.description,
@@ -707,6 +701,7 @@ async function createExperience({ supabase, body, auth }) {
     currency: input.currency,
     duration: input.duration,
     image_url: input.image,
+    slideshow_images_json: JSON.stringify(input.slideshowImages),
     tag: input.tag,
     included_json: JSON.stringify(input.included),
     sort_order: input.sortOrder ?? order,
@@ -716,23 +711,24 @@ async function createExperience({ supabase, body, auth }) {
   });
 
   await audit(supabase, auth.sub, "create", "experience", id);
-  const { data: exp } = await supabase.from("experiences").select("*").eq("id", id).single();
+  const { data: exp } = await supabase.from("packages").select("*").eq("id", id).single();
   return { status: 201, data: { experience: serializeExperience(exp) } };
 }
 
 async function updateExperience({ supabase, body, params, auth }) {
-  const { data: existing } = await supabase.from("experiences").select("id").eq("id", params.id).single();
+  const { data: existing } = await supabase.from("packages").select("id").eq("id", params.id).single();
   if (!existing) throw httpError(404, "Experience not found");
 
   const input = validateExperience(body?.experience ?? body);
   const now = new Date().toISOString();
-  await supabase.from("experiences").update({
+  await supabase.from("packages").update({
     title: input.title,
     description: input.description,
     price_cents: input.priceCents,
     currency: input.currency,
     duration: input.duration,
     image_url: input.image,
+    slideshow_images_json: JSON.stringify(input.slideshowImages),
     tag: input.tag,
     included_json: JSON.stringify(input.included),
     sort_order: input.sortOrder ?? 0,
@@ -741,12 +737,12 @@ async function updateExperience({ supabase, body, params, auth }) {
   }).eq("id", params.id);
 
   await audit(supabase, auth.sub, "update", "experience", params.id);
-  const { data: exp } = await supabase.from("experiences").select("*").eq("id", params.id).single();
+  const { data: exp } = await supabase.from("packages").select("*").eq("id", params.id).single();
   return { data: { experience: serializeExperience(exp) } };
 }
 
 async function deleteExperience({ supabase, params, auth }) {
-  const { data } = await supabase.from("experiences").delete().eq("id", params.id).select();
+  const { data } = await supabase.from("packages").delete().eq("id", params.id).select();
   if (!data?.length) throw httpError(404, "Experience not found");
   await audit(supabase, auth.sub, "delete", "experience", params.id);
   return { status: 204, empty: true };
@@ -1025,8 +1021,7 @@ function validateBooking(input) {
   if (paymentChoice !== "deposit" && paymentChoice !== "full")
     throw httpError(400, "Payment choice must be deposit or full.");
   return {
-    experienceId: optionalText(input?.experienceId, 100),
-    experienceTitle: input?.experienceId ? "" : text(input?.experienceTitle, "Experience title", 160),
+    experienceId: text(input?.experienceId, "Package", 100),
     guestName: text(input?.guestName, "Guest name", 120),
     email: emailValue(input?.email),
     phone: text(input?.phone, "Phone", 40),
@@ -1066,6 +1061,11 @@ function validateExperience(input) {
   const priceCents = Number.isInteger(input?.priceCents) ? input.priceCents : parseMoney(input?.price);
   if (!Number.isInteger(priceCents) || priceCents < 0 || priceCents > 100_000_000)
     throw httpError(400, "Price is invalid");
+  const slideshowImages = Array.isArray(input?.slideshowImages)
+    ? input.slideshowImages
+        .filter((image) => typeof image === "string" && image.trim())
+        .map((image) => safeImageUrl(image))
+    : [];
   return {
     id: optionalText(input?.id, 100),
     title: text(input?.title, "Title", 160),
@@ -1074,6 +1074,7 @@ function validateExperience(input) {
     currency: optionalText(input?.currency, 3).toUpperCase() || "USD",
     duration: text(input?.duration, "Duration", 80),
     image: safeImageUrl(input?.image ?? input?.imageUrl),
+    slideshowImages,
     tag: optionalText(input?.tag, 80),
     included: Array.isArray(input?.included)
       ? input.included.map((item) => text(item, "Included item", 200))
@@ -1111,6 +1112,7 @@ function serializeSite(row) {
 }
 
 function serializeExperience(row) {
+  const slideshowImages = parseJsonArray(row.slideshow_images_json).filter((image) => typeof image === "string" && image.trim());
   return {
     id: row.id,
     title: row.title,
@@ -1120,13 +1122,23 @@ function serializeExperience(row) {
     currency: row.currency,
     duration: row.duration,
     image: row.image_url,
+    slideshowImages: slideshowImages.length > 0 ? slideshowImages : row.image_url ? [row.image_url] : [],
     tag: row.tag,
-    included: JSON.parse(row.included_json),
+    included: parseJsonArray(row.included_json),
     sortOrder: row.sort_order,
     isActive: Boolean(row.is_active),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function parseJsonArray(value) {
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 function serializeBooking(row) {

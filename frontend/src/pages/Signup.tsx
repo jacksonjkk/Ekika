@@ -1,10 +1,12 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { registerCustomer } from "../data/api";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = safeRedirectPath(searchParams.get("redirect"));
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -26,7 +28,7 @@ export default function Signup() {
 
     try {
       await registerCustomer(name, email, password, phone);
-      navigate("/customer-portal", { replace: true });
+      navigate(redirectPath, { replace: true });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Unable to register account");
     } finally {
@@ -44,7 +46,7 @@ export default function Signup() {
           Register with Ekika
         </h1>
         <p className="text-on-surface-variant leading-relaxed mb-8">
-          Register to book authentic cultural experiences, keep track of your itineraries, and view hosts contact info.
+          Register to book authentic cultural packages, keep track of your itineraries, and view hosts contact info.
         </p>
 
         {error && (
@@ -126,11 +128,16 @@ export default function Signup() {
 
         <div className="mt-8 pt-6 border-t border-outline-variant/10 text-center text-sm text-on-surface-variant">
           Already have an account?{" "}
-          <Link className="text-primary font-bold hover:underline" to="/customer-access">
+          <Link className="text-primary font-bold hover:underline" to={`/customer-access?redirect=${encodeURIComponent(redirectPath)}`}>
             Sign in here
           </Link>
         </div>
       </div>
     </main>
   );
+}
+
+function safeRedirectPath(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/customer-portal";
+  return value;
 }

@@ -31,7 +31,7 @@ export default function Footer() {
               Explore
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-1 gap-x-5 gap-y-3 text-sm">
-              <Link className="hover:text-[#a94c16] transition-colors" to="/experiences">Experiences</Link>
+              <Link className="hover:text-[#a94c16] transition-colors" to="/experiences">Packages</Link>
               <Link className="hover:text-[#a94c16] transition-colors" to="/gallery">Gallery</Link>
               {customer ? (
                 <Link className="hover:text-[#a94c16] transition-colors" to="/customer-portal">My Dashboard</Link>

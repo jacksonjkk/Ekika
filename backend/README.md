@@ -84,7 +84,7 @@ Admin bearer token required:
 
 ```json
 {
-  "experienceId": "food-cooking",
+  "experienceId": "half-day-package",
   "guestName": "Guest Name",
   "email": "guest@example.com",
   "phone": "+256700000000",
@@ -95,7 +95,7 @@ Admin bearer token required:
 }
 ```
 
-The API ignores client prices and calculates the total from the selected database experience.
+The API ignores client prices and calculates the total from the selected database package.
 
 ## Payments
 

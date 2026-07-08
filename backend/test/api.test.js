@@ -68,8 +68,19 @@ test("health and public content are available", async () => {
 
     const content = await invoke(app, { url: "/api/experiences" });
     assert.equal(content.status, 200);
-    assert.equal(content.body.experiences.length, 5);
-    assert.equal(content.body.experiences[0].priceCents, 4500);
+    assert.equal(content.body.experiences.length, 2);
+    assert.equal(content.body.experiences[0].id, "half-day-package");
+    assert.equal(content.body.experiences[0].priceCents, 0);
+    assert.deepEqual(content.body.experiences[1].included, [
+      "Craft making",
+      "Traditional lunch",
+      "Local porridge Bushera",
+      "Local beer Omuramba",
+      "Dance Ekizino",
+      "Cultural",
+      "Campfire story telling",
+      "Community walks",
+    ]);
   } finally {
     closeDatabase(db);
   }
@@ -82,7 +93,7 @@ test("booking totals are calculated from the database and portal token grants ac
       method: "POST",
       url: "/api/bookings",
       body: {
-        experienceId: "food-cooking",
+        experienceId: "half-day-package",
         guestName: "Test Traveler",
         email: "traveler@example.com",
         phone: "+256700000001",
@@ -95,8 +106,8 @@ test("booking totals are calculated from the database and portal token grants ac
     });
 
     assert.equal(created.status, 201);
-    assert.equal(created.body.booking.totalCents, 9000);
-    assert.equal(created.body.booking.amountDueCents, 2700);
+    assert.equal(created.body.booking.totalCents, 0);
+    assert.equal(created.body.booking.amountDueCents, 0);
     assert.ok(created.body.booking.portalToken);
 
     const portal = await invoke(app, { url: `/api/portal/${created.body.booking.portalToken}` });
@@ -117,7 +128,7 @@ test("past dates are rejected", async () => {
       method: "POST",
       url: "/api/bookings",
       body: {
-        experienceId: "food-cooking",
+        experienceId: "half-day-package",
         guestName: "Test Traveler",
         email: "traveler@example.com",
         phone: "+256700000001",
@@ -139,7 +150,7 @@ test("mock payment updates the portal booking", async () => {
       method: "POST",
       url: "/api/bookings",
       body: {
-        experienceId: "storytelling",
+        experienceId: "full-day-package",
         guestName: "Payment Test",
         email: "payment@example.com",
         phone: "+256700000002",
@@ -216,7 +227,7 @@ test("email OTP creates and revokes a customer portal session", async () => {
       method: "POST",
       url: "/api/bookings",
       body: {
-        experienceId: "storytelling",
+        experienceId: "full-day-package",
         guestName: "OTP Traveler",
         email: "otp@example.com",
         phone: "+256700000003",

@@ -16,7 +16,9 @@ type AdminBookingDraft = {
   specialRequests: string;
 };
 
-export default function Admin() {
+type ExperienceTextField = Exclude<keyof SiteContent["experiences"][number], "slideshowImages">;
+
+function Admin() {
   const isAuthed = useAdminAuth();
   const [email, setEmail] = useState(import.meta.env.VITE_ADMIN_EMAIL ?? "admin@ekikaexperience.ug");
   const [password, setPassword] = useState("");
@@ -103,13 +105,43 @@ export default function Admin() {
     }));
   }
 
-  function updateExperienceDraft(field: keyof SiteContent["experiences"][number], value: string) {
+  function updateExperienceDraft(field: ExperienceTextField, value: string) {
     setSaveStatus("idle");
     setExperienceError("");
     setExperienceDraft((current) => ({
       ...current,
       [field]: field === "included" ? value.split("\n").filter(Boolean) : value,
     }));
+  }
+
+  function updateExperienceSlide(index: number, imageUrl: string) {
+    setSaveStatus("idle");
+    setExperienceError("");
+    setExperienceDraft((current) => ({
+      ...current,
+      slideshowImages: current.slideshowImages.map((slide, slideIndex) => (slideIndex === index ? imageUrl : slide)),
+    }));
+  }
+
+  function addExperienceSlide() {
+    setSaveStatus("idle");
+    setExperienceError("");
+    setExperienceDraft((current) => ({
+      ...current,
+      slideshowImages: [...current.slideshowImages, ""],
+    }));
+  }
+
+  function removeExperienceSlide(index: number) {
+    setSaveStatus("idle");
+    setExperienceError("");
+    setExperienceDraft((current) => {
+      const nextSlides = current.slideshowImages.filter((_, slideIndex) => slideIndex !== index);
+      return {
+        ...current,
+        slideshowImages: nextSlides.length > 0 ? nextSlides : [""],
+      };
+    });
   }
 
   function clearExperienceForm() {
@@ -119,7 +151,7 @@ export default function Admin() {
   }
 
   function editExperience(experience: SiteContent["experiences"][number]) {
-    setExperienceDraft({ ...experience, included: [...experience.included] });
+    setExperienceDraft({ ...experience, included: [...experience.included], slideshowImages: [...experience.slideshowImages] });
     setEditingExperienceId(experience.id);
     setExperienceError("");
   }
@@ -255,7 +287,7 @@ export default function Admin() {
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 bg-surface-container-low rounded-2xl p-2">
           {[
             ["bookings", "Bookings"],
-            ["experiences", "Experiences"],
+            ["experiences", "Packages"],
             ["site", "Site"],
             ["gallery", "Gallery"],
             ["reviews", "Reviews"],
@@ -346,7 +378,6 @@ export default function Admin() {
                 >
                 <article
                   aria-labelledby="booking-details-title"
-                  aria-modal={window.matchMedia("(max-width: 1023px)").matches || undefined}
                   className="relative bg-surface-container-low rounded-2xl p-5 sm:p-7 border border-outline-variant/10 shadow-2xl outline-none max-lg:mx-auto max-lg:my-4 max-lg:max-w-2xl lg:shadow-lg"
                   ref={bookingDetailsRef}
                   role="dialog"
@@ -426,8 +457,8 @@ export default function Admin() {
 
         {activeTab === "experiences" && <section className="space-y-6">
           <div>
-            <h2 className="font-headline text-3xl font-black">Experiences & Prices</h2>
-            <p className="text-on-surface-variant mt-2">Use one form to add or edit experiences, then review them in the library beside it.</p>
+            <h2 className="font-headline text-3xl font-black">Packages & Prices</h2>
+            <p className="text-on-surface-variant mt-2">Use one form to add or edit packages, then review them in the library beside it.</p>
           </div>
 
           {experienceError && <p className="rounded-xl bg-red-50 p-4 text-sm font-bold text-red-700" role="alert">{experienceError}</p>}
@@ -435,38 +466,75 @@ export default function Admin() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             <div className="lg:col-span-5 lg:sticky lg:top-28 bg-surface-container-low rounded-2xl p-5 sm:p-6 border border-outline-variant/10 space-y-5">
               <div className="flex items-center justify-between gap-4">
-                <h3 className="font-headline text-2xl font-black">{editingExperienceId ? "Edit Experience" : "Add Experience"}</h3>
+                <h3 className="font-headline text-2xl font-black">{editingExperienceId ? "Edit Package" : "Add Package"}</h3>
                 {editingExperienceId && <button className="text-primary font-bold text-sm" onClick={clearExperienceForm} type="button">Cancel Edit</button>}
               </div>
               <ImageUpload
-                alt={`${experienceDraft.title || "Experience"} preview`}
+                alt={`${experienceDraft.title || "Package"} preview`}
                 key={experienceDraft.id}
                 label="Cover Image"
                 onUploaded={(imageUrl) => updateExperienceDraft("image", imageUrl)}
                 value={experienceDraft.image}
               />
+              <div className="rounded-2xl bg-surface p-4 sm:p-5 border border-outline-variant/10 space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h4 className="font-headline text-lg font-black">Slideshow Images</h4>
+                    <p className="text-xs text-on-surface-variant mt-1">Add one or more images to cycle on the public package card.</p>
+                  </div>
+                  <button className="text-sm font-bold text-primary" onClick={addExperienceSlide} type="button">
+                    Add Slide
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {experienceDraft.slideshowImages.map((slideImage, index) => (
+                    <div className="rounded-2xl bg-surface-container-low p-3 sm:p-4 space-y-3" key={`${experienceDraft.id}-slide-${index}`}>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-xs font-bold tracking-widest uppercase text-on-surface-variant">Slide {index + 1}</span>
+                        <button
+                          className="text-xs font-bold text-primary disabled:text-on-surface-variant"
+                          disabled={experienceDraft.slideshowImages.length === 1}
+                          onClick={() => removeExperienceSlide(index)}
+                          type="button"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <ImageUpload
+                        alt={`${experienceDraft.title || "Package"} slide ${index + 1}`}
+                        label={`Slide ${index + 1}`}
+                        onUploaded={(imageUrl) => updateExperienceSlide(index, imageUrl)}
+                        value={slideImage}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <AdminField label="Title" value={experienceDraft.title} onChange={(value) => updateExperienceDraft("title", value)} />
-                <AdminField label="Price" value={experienceDraft.price} onChange={(value) => updateExperienceDraft("price", value)} />
+                <div>
+                  <AdminField label="Price per person" value={experienceDraft.price} onChange={(value) => updateExperienceDraft("price", value)} />
+                  <p className="text-xs text-on-surface-variant mt-2 px-1">Use $0 to show Price to confirm.</p>
+                </div>
                 <AdminField label="Duration" value={experienceDraft.duration} onChange={(value) => updateExperienceDraft("duration", value)} />
                 <AdminField label="Tag" value={experienceDraft.tag} onChange={(value) => updateExperienceDraft("tag", value)} />
               </div>
               <AdminTextarea label="Description" value={experienceDraft.description} onChange={(value) => updateExperienceDraft("description", value)} />
               <AdminTextarea label="Included Items (one per line)" value={experienceDraft.included.join("\n")} onChange={(value) => updateExperienceDraft("included", value)} />
               <button className="w-full bg-primary text-on-primary px-5 py-4 rounded-xl font-bold" onClick={submitExperience} type="button">
-                {editingExperienceId ? "Update Experience" : "Add Experience"}
+                {editingExperienceId ? "Update Package" : "Add Package"}
               </button>
             </div>
 
             <div className="lg:col-span-7 bg-surface-container-low rounded-2xl p-5 sm:p-6 border border-outline-variant/10">
               <div className="flex items-center justify-between gap-4 mb-5">
-                <h3 className="font-headline text-2xl font-black">Experience Library</h3>
+                <h3 className="font-headline text-2xl font-black">Package Library</h3>
                 <span className="rounded-full bg-surface px-3 py-1 text-xs font-bold text-on-surface-variant">{content.experiences.length} item{content.experiences.length === 1 ? "" : "s"}</span>
               </div>
               {content.experiences.length === 0 ? (
                 <div className="py-16 text-center text-on-surface-variant">
                   <span className="material-symbols-outlined text-primary text-5xl mb-3">explore</span>
-                  <p>Added experiences will appear here.</p>
+                  <p>Added packages will appear here.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -477,9 +545,9 @@ export default function Admin() {
                           {experience.image ? <img className="h-full w-full object-cover" src={experience.image} alt="" /> : <span className="material-symbols-outlined h-full w-full flex items-center justify-center text-primary">image</span>}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Experience {index + 1}</p>
+                          <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Package {index + 1}</p>
                           <h4 className="font-headline text-lg font-black truncate">{experience.title}</h4>
-                          <p className="text-sm text-on-surface-variant"><span className="font-bold text-primary">{experience.price}</span> · {experience.duration}</p>
+                          <p className="text-sm text-on-surface-variant"><span className="font-bold text-primary">{packagePriceLabel(experience.price)}</span> · {experience.duration}</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 shrink-0">
@@ -514,20 +582,33 @@ export default function Admin() {
         </div>}
       </form>
 
-      {(saveStatus === "success" || saveStatus === "error") && (
-        <div
-          className={`fixed bottom-24 sm:bottom-8 right-4 left-4 sm:left-auto z-50 sm:max-w-md rounded-2xl p-5 shadow-2xl border flex items-start gap-4 ${
-            saveStatus === "success"
-              ? "bg-secondary-container text-on-secondary-container border-secondary/20"
-              : "bg-red-50 text-red-800 border-red-200"
-          }`}
-          role={saveStatus === "error" ? "alert" : "status"}
-        >
+      {saveStatus === "success" && (
+        <div className="fixed bottom-24 sm:bottom-8 right-4 left-4 sm:left-auto z-50 sm:max-w-md rounded-2xl p-5 shadow-2xl border flex items-start gap-4 bg-secondary-container text-on-secondary-container border-secondary/20" role="status">
           <span className="material-symbols-outlined text-2xl" aria-hidden="true">
-            {saveStatus === "success" ? "check_circle" : "error"}
+            check_circle
           </span>
           <div className="flex-1 min-w-0">
-            <p className="font-headline text-lg font-black mb-1">{saveStatus === "success" ? "Updates saved" : "Save failed"}</p>
+            <p className="font-headline text-lg font-black mb-1">Updates saved</p>
+            <p className="text-sm leading-relaxed">{saveMessage}</p>
+          </div>
+          <button
+            aria-label="Dismiss notification"
+            className="shrink-0 rounded-full p-1 hover:bg-black/5"
+            onClick={() => setSaveStatus("idle")}
+            type="button"
+          >
+            <span className="material-symbols-outlined text-xl">close</span>
+          </button>
+        </div>
+      )}
+
+      {saveStatus === "error" && (
+        <div className="fixed bottom-24 sm:bottom-8 right-4 left-4 sm:left-auto z-50 sm:max-w-md rounded-2xl p-5 shadow-2xl border flex items-start gap-4 bg-red-50 text-red-800 border-red-200" role="alert">
+          <span className="material-symbols-outlined text-2xl" aria-hidden="true">
+            error
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="font-headline text-lg font-black mb-1">Save failed</p>
             <p className="text-sm leading-relaxed">{saveMessage}</p>
           </div>
           <button
@@ -555,6 +636,10 @@ function createEmptyExperience(): SiteContent["experiences"][number] {
     tag: "",
     included: [],
   };
+}
+
+function packagePriceLabel(price: string) {
+  return price === "$0" || price === "$0.00" ? "Price to confirm" : price;
 }
 
 type GalleryItem = {
@@ -847,12 +932,15 @@ function formatFileSize(bytes: number) {
   return bytes >= 1_000_000 ? `${(bytes / 1_000_000).toFixed(1)} MB` : `${Math.ceil(bytes / 1_000)} KB`;
 }
 
+export default Admin;
+
 function AdminField({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
   return (
     <div className="flex flex-col">
       <span className="block text-sm font-bold text-on-surface tracking-wide px-1 mb-2">{label}</span>
       <input
         className="h-14 bg-surface-container-high border-none rounded-xl px-4 text-on-surface"
+        aria-label={label}
         onChange={(event) => onChange(event.target.value)}
         type={type}
         value={value}
@@ -1356,11 +1444,12 @@ function ReviewsManager() {
               onChange={(reviewerName) => updateDraft({ reviewerName })}
             />
             <div className="flex flex-col">
-              <span className="block text-sm font-bold text-on-surface tracking-wide px-1 mb-2">
+              <label className="block text-sm font-bold text-on-surface tracking-wide px-1 mb-2" htmlFor="review-experience">
                 Experience
-              </span>
+              </label>
               <select
                 className="h-14 bg-surface-container-high border-none rounded-xl px-4 text-on-surface capitalize font-bold"
+                id="review-experience"
                 value={draft.experienceTitle}
                 onChange={(event) => updateDraft({ experienceTitle: event.target.value })}
               >
@@ -1395,6 +1484,7 @@ function ReviewsManager() {
                 </button>
                 <input
                   className="h-14 flex-1 bg-surface-container-high border-none rounded-xl px-4 text-on-surface"
+                  aria-label="Review display order"
                   type="number"
                   min={0}
                   value={draft.sortOrder}
@@ -1535,4 +1625,3 @@ function ReviewsManager() {
     </section>
   );
 }
-
