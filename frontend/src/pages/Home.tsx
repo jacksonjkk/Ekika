@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getPublicReviews } from "../data/api";
 import type { Review } from "../data/api";
-import Image from "../../../images/buny.png";
+import Image from "../assets/buny.png";
 
 export default function Home() {
   const [reviews, setReviews] = useState<Review[]>([]);
